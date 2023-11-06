@@ -69,6 +69,7 @@ router.post('/blockchain', async (req, res) => {
 // *****************************  Internal helpers *********************************** //
 
 function generateUniqueTransactionId() {
+    return uuidv4();
 }
 
 module.exports = router;
