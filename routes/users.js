@@ -8,8 +8,6 @@ const db = require('../db/usersDb');
 router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
-
     if (foundUser) {
         // TODO: replace with DB call
         res.status(200).json(foundUser);
@@ -20,8 +18,6 @@ router.get('/:userId', async (req, res) => {
 
 router.get('/suggest_pods/:userId', async (req, res) => {
     const userId = req.params.userId;
-
-    const foundUser = await db.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
