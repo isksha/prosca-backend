@@ -1,5 +1,6 @@
 var express = require('express');
 var cors = require("cors");
+const { v4: uuidv4 } = require('uuid');
 
 var router = express.Router();
 var db =  require('../db/walletsDb');
@@ -55,6 +56,7 @@ router.delete('/:walletId', async(req, res) => {
 // *****************************  Internal helpers *********************************** //
 
 function generateUniqueWalletId() {
+    return uuidv4();
 }
 
 module.exports = router;

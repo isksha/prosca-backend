@@ -1,5 +1,6 @@
 var express = require('express');
 var cors = require("cors");
+const { v4: uuidv4 } = require('uuid');
 
 var router = express.Router();
 var db =  require('../db/votesDb');
@@ -65,6 +66,7 @@ router.post('/check_termination_and_terminate_conditionally/', async (req, res) 
 // *****************************  Internal helpers *********************************** //
 
 function generateUniqueVoteId() {
+    return uuidv4();
 }
 
 module.exports = router;

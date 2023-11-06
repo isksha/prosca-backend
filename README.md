@@ -1,1 +1,1 @@
-HELLO hi goodbye
+to run: node ./bin/www

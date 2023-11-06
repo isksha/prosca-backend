@@ -1,5 +1,6 @@
 var express = require('express');
 var cors = require("cors");
+const { v4: uuidv4 } = require('uuid');
 
 var router = express.Router();
 var db =  require('../db/podsDb');
@@ -41,6 +42,7 @@ router.post('/', async (req, res) => {
     const podRegulation = req.body.podRegulation;
 
     const newPodId = generateUniquePodId();
+    console.log(newPodId);
 
     // TODO: DB calls
 
@@ -161,6 +163,7 @@ function generatePodInvitationCode() {
 }
 
 function generateUniquePodId() {
+    return uuidv4();
 }
 
 module.exports = router;
