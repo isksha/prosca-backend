@@ -130,4 +130,4 @@ dist
 .pnp.*
 
 # ignore mysql config file
-db/config.js
+db/config.json
