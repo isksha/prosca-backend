@@ -1,4 +1,21 @@
-// TODO : establish collection
+// establish collection
+const mysql = require('mysql2')
+const config = require('./config.json')
+console.log({
+  host: config.rds_host,
+  user: config.rds_username,
+  password: config.rds_password,
+  port: config.rds_port,
+  database: config.rds_db
+})
+const connection = mysql.createConnection({
+  host: config.rds_host,
+  username: config.rds_username,
+  password: config.rds_password,
+  port: config.rds_port,
+  database: config.rds_db
+});
+connection.connect((err) => err && console.log(err));
 
 const getPod = async (podId) => {
     return {1: 3};
