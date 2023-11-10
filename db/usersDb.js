@@ -42,9 +42,11 @@ const addUser = async (user_id, email_address, phone_number, first_name, last_na
             Users (user_id, first_name, last_name, phone, email_address, 
             user_password, date_of_birth, score, national_id, country)
         */
+
+        // TODO: change initial score value
         const query = `
         INSERT INTO Users (user_id, first_name, last_name, phone, email_address, user_password, date_of_birth, score, wallet_amount, national_id, country) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 350, 0, ?, ?)
         `
         connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, national_id, country], (err, result) => {
             if (err) {
