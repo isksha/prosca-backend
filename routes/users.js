@@ -1,12 +1,16 @@
 const express = require('express');
 const cors = require("cors");
 
+const { v4: uuidv4 } = require('uuid');
+
 const router = express.Router();
 const db = require('../db/usersDb');
 
 // ********************************     GET routes *********************************** //
 router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
+
+    const foundUser = await db.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
@@ -69,19 +73,27 @@ router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
 
 // ********************************    POST routes *********************************** //
 
+// curl -i -X POST -d 'email=iskpod&userPass' http://localhost:3000/users
 // curl -i -X POST -d 'username=iskpod&userScore=200&userPhone=200&userFname=isk&userLname=shan&userPass=hello&userDOB=01-01-2020' http://localhost:3000/users
 router.post('/', async (req, res) => {
-    const userName = req.body.username;
-    const userScore = req.body.userScore;
-    const userPhone = req.body.userPhone;
-    const userFname = req.body.userFname;
-    const userLname = req.body.userLname;
+    const userEmail = req.body.email;
     const userPass = req.body.userPass;
-    const userDOB = req.body.userDOB;
+    // const userScore = req.body.userScore;
+    // const userPhone = req.body.userPhone;
+    // const userFname = req.body.userFname;
+    // const userLname = req.body.userLname;
+    // const userDOB = req.body.userDOB;
+
+    const userId = generateUniqueUserId();
 
     // TODO: DB calls
+    try {
+        await db.addUser(userId, userEmail, null, null, null, null, userPass, null, null, null);
+    } catch (err) {
+        console.log(err);
+    }
 
-    res.status(200).json({userLname, userDOB, userFname, userPhone, userName, userScore, userPass});
+    // res.status(200).json({, userLname, userDOB, userFname, userPhone, userName, userScore, userPass});
 
     // TODO: error handling
 });
@@ -269,5 +281,8 @@ router.delete('/:userId', async(req, res) => {
 
 // *****************************  Internal helpers *********************************** //
 
+function generateUniqueUserId() {
+    return uuidv4();
+}
 
 module.exports = router;
