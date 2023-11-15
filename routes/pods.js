@@ -10,14 +10,19 @@ var db =  require('../db/podsDb');
 router.get('/:podId', async (req, res) => {
     const podId = req.params.podId;
 
-    const foundPod = await db.getPod(podId);
-
-    if (foundPod) {
-        // TODO: replace with DB call
-        res.status(200).json(foundPod);
-    } else {
-        res.status(404).json({error: 'Pod not found'});
+    try {
+        const foundPod = await db.getPod(podId);
+        if (foundPod) {
+            // TODO: replace with DB call
+            res.status(200).json(foundPod);
+        } else {
+            res.status(404).json({error: 'Pod not found'});
+        }
+        
+    } catch (err) {
+        console.log(err);
     }
+
 });
 
 router.get('/transactions/:podId/', async(req, res) => {
