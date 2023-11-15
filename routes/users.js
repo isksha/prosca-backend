@@ -9,6 +9,7 @@ const db = require('../db/usersDb');
 // ********************************     GET routes *********************************** //
 router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
+    foundUser = await db.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call

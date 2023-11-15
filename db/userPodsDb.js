@@ -37,15 +37,18 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
         // User_Pods(user_id, pod_id, date_joined, date_left)
+        // Users already in a pod are not re-added
         const query = `
-        INSERT INTO User_Pods (user_id, pod_id, date_joined) 
-        VALUES (?, ?, ?)
+        INSERT INTO User_Pods (user_id, pod_id,date_joined)
+        SELECT '${user_id}' AS user_id, '${pod_id}' AS pod_id, NOW() as date_joined
+        FROM User_Pods
+        WHERE NOT EXISTS(SELECT * FROM User_Pods WHERE user_id = '${user_id}' AND pod_id = '${pod_id}' AND date_left IS NULL) LIMIT 1;
         `
         connection.query(query, [user_id, pod_id, date_joined], (err, result) => {
             if (err) {
                 reject(`Error in addUserToPod: cannot add user to User_Pods table. ${err.message}`);
             } else if (result.affectedRows === 0) {
-                reject(`Error in addUserToPod: no rows were modified when adding user to User_Pods table.`);
+                resolve(`Error in addUserToPod: No rows were modified when adding user to User_Pods table. User already in Pod`);
             } else {
                 resolve(result.affectedRows) // should return 1 on success
             }

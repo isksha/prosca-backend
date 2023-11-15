@@ -4,8 +4,26 @@ const { v4: uuidv4 } = require('uuid');
 
 var router = express.Router();
 var db =  require('../db/podsDb');
+var userpod_db =  require('../db/userPodsDb');
 
 // ********************************     GET routes *********************************** //
+router.get('/', async (req, res) => {
+    const podId = req.params.podId;
+
+    try {
+        const foundPods = await db.getPods();
+        if (foundPod) {
+            // TODO: replace with DB call
+            res.status(200).json(foundPods);
+        } else {
+            res.status(404).json({error: 'No pods found'});
+        }
+        
+    } catch (err) {
+        console.log(err);
+    }
+
+});
 
 router.get('/:podId', async (req, res) => {
     const podId = req.params.podId;
@@ -40,20 +58,44 @@ router.get('/transactions/:podId/', async(req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'podName=iskpod&podVisibility=private&podRegulation=splendid' http://localhost:3000/pods
-router.post('/', async (req, res) => {
+// This route is used to create a new pod
+// curl -i -X POST -d 'podName=thefirstpod&podVisibility=private&creatorID=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94' http://localhost:3000/pods/formpod
+router.post('/formpod', async (req, res) => {
     const podName = req.body.podName;
     const podVisibility = req.body.podVisibility;
-    const podRegulation = req.body.podRegulation;
-
+    const creatorID = req.body.creatorID;
+    const creationDate = Date() 
+    const podCode = generatePodInvitationCode()
     const newPodId = generateUniquePodId();
+    
     console.log(newPodId);
 
-    // TODO: DB calls
+    // DB calls
+    try {
+        addedPod =  await db.addPod(newPodId,podName, podVisibility, creatorID, creationDate, podCode);
+        res.status(200).json({ success: 'Pod created successfully' });
+    } catch (err) {
+        console.log(err);
+        res.status(401).json({ error: 'Failed to create pod' });
+    }
+    
+});
 
-    res.status(200).json({podName, podVisibility, podRegulation});
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/pods/joinpod
+router.post('/joinpod', async (req, res) => {
+    const podId = req.body.podId;
+    const userId = req.body.userId;
+    const dateJoined = Date()
 
-    // TODO: error handling
+    try {
+        addedUsertoPod =  await userpod_db.addUserToPod(userId, podId, dateJoined)
+        res.status(200).json({ success: 'User successfully added to pod' });
+    } catch (err) {
+        console.log(err);
+        res.status(401).json({ error: 'Failed to add user to pod' });
+    }
+
+ 
 });
 
 // curl -i -X POST -d 'podId=isk&userId=iskander' http://localhost:3000/pods/kick
@@ -72,19 +114,6 @@ router.post('/kick', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/form_pod
-router.post('/form_pod', async (req, res) => {
-    const podId = req.body.podId
-
-    const foundPod = await db.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundPod);
-    } else {
-        res.status(401).json({ error: 'Failed to form pod' });
-    }
-});
 
 // curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/advance_cycle
 router.post('/advance_cycle', async (req, res) => {
@@ -149,22 +178,28 @@ router.put('/:podId',  async(req, res) => {
 // ********************************  DELETE routes *********************************** //
 
 // curl -i -X DELETE http://localhost:3000/pods/isk
-router.delete('/:podId', async(req, res) => {
-    const podId = req.params.podId;
+// router.delete('/:podId', async(req, res) => {
+//     const podId = req.params.podId;
 
-    const foundPod = await db.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
+//     const foundPod = await db.getPod(podId);
+//     if (foundPod) {
+//         // TODO: replace with DB calls
 
-        res.status(200).json(foundPod);
-    } else {
-        res.status(404).json({ error: 'Pod not found' });
-    }
-});
+//         res.status(200).json(foundPod);
+//     } else {
+//         res.status(404).json({ error: 'Pod not found' });
+//     }
+// });
 
 // *****************************  Internal helpers *********************************** //
 
 function generatePodInvitationCode() {
+    const rand1 = Math.floor(Math.random() * 9).toString()
+    const rand2 = Math.floor(Math.random() * 9).toString()
+    const rand3 = Math.floor(Math.random() * 9).toString()
+    const rand4 = Math.floor(Math.random() * 9).toString()
+    const rand5 = Math.floor(Math.random() * 9).toString()
+    return rand1.concat(rand2,rand3,rand4,rand5)
 }
 
 function generateUniquePodId() {
