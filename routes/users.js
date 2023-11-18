@@ -94,7 +94,6 @@ router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
 // curl -i -X POST -d 'email=isk@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&password=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
 router.post('/', async (req, res) => {
     const userEmail = req.body.email
-    const userPass = req.body.userPass
     const userPhone = req.body.phone
     const userFname = req.body.fname
     const userLname = req.body.lname
@@ -102,6 +101,15 @@ router.post('/', async (req, res) => {
     const userDob = req.body.dob
     const userPassport = SHA3(req.body.passport).toString() // encrypt server-side
     const userCountry = req.body.country
+
+    try {
+        const userExists = await userDb.getUserByEmail(userEmail);
+        if (userExists !== null) {
+            return res.status(401).json({ error: 'User already exists' });
+        }
+    } catch (err) {
+        return res.status(401).json({ error: 'Failed to add user' });
+    }
 
     const userId = common.generateUniqueId();
 
@@ -119,17 +127,22 @@ router.post('/', async (req, res) => {
     // TODO: error handling
 });
 
-// curl -i -X POST -d 'userId=isk' http://localhost:3000/users/authenticate
+// curl -i -X POST -d 'email=isk@isk.com&password=hello' http://localhost:3000/users/authenticate
 router.post('/authenticate', async (req, res) => {
-    const userId = req.body.userId
+    const userEmail = req.body.email
+    const userPassword = req.body.password
 
-    const foundUser = await userDb.getUser(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundUser);
+    const foundUser = await userDb.getUserByEmail(userEmail);
+    if (foundUser === null) {
+        res.status(404).json({ error: 'Failed to authenticate user' });
     } else {
-        res.status(401).json({ error: 'Failed to authenticate user' });
+        if (foundUser.user_password !== SHA3(userPassword).toString()) {
+            console.log("SHA:           ", SHA3(userPassword).toString())
+            console.log("Password in DB:", foundUser.user_password)
+            res.status(401).json({ error: 'Incorrect password' });
+        } else {
+            res.status(200).json( { success: 'Successfully logged in user' } );
+        }
     }
 });
 

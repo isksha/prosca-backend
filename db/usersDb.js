@@ -32,6 +32,34 @@ const getUser = async (user_id) => {
 }
 
 /*
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getUserByEmail = async (email) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        /*
+            Users (user_id, first_name, last_name, phone, email_address,
+            user_password, date_of_birth, score, national_id, country)
+        */
+        const query = `
+          SELECT * 
+          FROM Users 
+          WHERE email_address = ?
+        `;
+
+        connection.query(query, [email], (err, data) => {
+            if (err) {
+                reject(`Error in getUserByEmail: cannot get user from Users table. ${err.message}`);
+            } else {
+                resolve(data[0])
+            }
+        });
+        // closeConnection(connection)
+    });
+}
+
+/*
   parameters: user_id, email_address, phone_number, first_name, last_name, 
               password, date_of_birth, national_id, country
   returns: 1 on success, error message on error
@@ -72,5 +100,6 @@ const addUserInfo = async (email_address, score, phone_number, first_name, last_
 
 module.exports = {
     getUser,
-    addUser
+    addUser,
+    getUserByEmail
 };
