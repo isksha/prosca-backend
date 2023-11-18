@@ -1,9 +1,10 @@
-var express = require('express');
-var cors = require("cors");
+const express = require('express');
+const cors = require("cors");
 const { v4: uuidv4 } = require('uuid');
 
-var router = express.Router();
-var db =  require('../db/podsDb');
+const router = express.Router();
+const db =  require('../db/podsDb');
+const common = require('../common/common_functionalities');
 
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
@@ -58,19 +59,19 @@ router.get('/transactions/:podId/', async(req, res) => {
 
 // curl -i -X POST -d 'pod_name=iskpod&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94' http://localhost:3000/pods/
 router.post('/', async (req, res) => {
-    const generatedPodId = generateUniquePodId();
+    const generatedPodId = common.generateUniqueId();
     const podName = req.body.pod_name;
     const podVisibility = req.body.visibility;
     const podCreatorId = req.body.pod_creator_id;
-    const podCreationDate = getDate();
+    const podCreationDate = common.getDate();
     const podCode = generatePodInvitationCode();
 
     try {
         const newPod = await db.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode);
-        res.status(200).json( { message: 'Created pod successfully' } );
+        res.status(200).json( { success: 'Created pod successfully' } );
     } catch (err) {
         console.log(err)
-        res.status(401).json( { message: 'Failed in creating pod' } );
+        res.status(401).json( { error: 'Failed in creating pod' } );
     }
 });
 
@@ -175,14 +176,6 @@ function generatePodInvitationCode() {
     const rand4 = Math.floor(Math.random() * 9).toString()
     const rand5 = Math.floor(Math.random() * 9).toString()
     return rand1.concat(rand2,rand3,rand4,rand5)
-}
-
-function generateUniquePodId() {
-    return uuidv4();
-}
-
-function getDate() {
-    return new Date()
 }
 
 module.exports = router;

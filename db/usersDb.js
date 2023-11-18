@@ -1,4 +1,5 @@
 const {openConnection, closeConnection} = require("./dbConnection");
+const common = require('../common/common_functionalities');
 
 /* 
   parameters: user_id
@@ -32,10 +33,10 @@ const getUser = async (user_id) => {
 
 /*
   parameters: user_id, email_address, phone_number, first_name, last_name, 
-              wallet_ammount, password, date_of_birth, national_id, country
+              password, date_of_birth, national_id, country
   returns: 1 on success, error message on error
 */
-const addUser = async (user_id, email_address, phone_number, first_name, last_name, wallet_ammount, password, date_of_birth, national_id, country) => {
+const addUser = async (user_id, email_address, phone_number, first_name, last_name, password, date_of_birth, national_id, country) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
         /*
@@ -46,9 +47,9 @@ const addUser = async (user_id, email_address, phone_number, first_name, last_na
         // TODO: change initial score value
         const query = `
         INSERT INTO Users (user_id, first_name, last_name, phone, email_address, user_password, date_of_birth, score, wallet_amount, national_id, country) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 350, 0, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
         `
-        connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, national_id, country], (err, result) => {
+        connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, common.DEFAULT_USER_SCORE, national_id, country], (err, result) => {
             if (err) {
                 reject(`Error in addUser: cannot add user to Users table. ${err.message}`);
               } else if (result.affectedRows === 0) {

@@ -1,9 +1,9 @@
-var express = require('express');
-var cors = require("cors");
+const express = require('express');
+const cors = require("cors");
 const { v4: uuidv4 } = require('uuid');
 
-var router = express.Router();
-var db =  require('../db/walletsDb');
+const router = express.Router();
+const db = require('../db/walletsDb');
 
 // ********************************     GET routes *********************************** //
 router.get('/:walletId', async (req, res) => {

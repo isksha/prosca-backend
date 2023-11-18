@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require("cors");
 
-const { v4: uuidv4 } = require('uuid');
+const SHA3 = require('crypto-js/sha3');
 
 const router = express.Router();
 const userDb = require('../db/usersDb');
-var userPodDb =  require('../db/userPodsDb');
+const common = require('../common/common_functionalities');
+const userPodDb =  require('../db/userPodsDb');
 
 // ********************************     GET routes *********************************** //
 router.get('/:userId', async (req, res) => {
@@ -90,24 +91,27 @@ router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'email=iskpod&userPass' http://localhost:3000/users
-// curl -i -X POST -d 'username=iskpod&userScore=200&userPhone=200&userFname=isk&userLname=shan&userPass=hello&userDOB=01-01-2020' http://localhost:3000/users
+// curl -i -X POST -d 'email=isk@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&password=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
 router.post('/', async (req, res) => {
-    const userEmail = req.body.email;
-    const userPass = req.body.userPass;
-    // const userScore = req.body.userScore;
-    // const userPhone = req.body.userPhone;
-    // const userFname = req.body.userFname;
-    // const userLname = req.body.userLname;
-    // const userDOB = req.body.userDOB;
+    const userEmail = req.body.email
+    const userPass = req.body.userPass
+    const userPhone = req.body.phone
+    const userFname = req.body.fname
+    const userLname = req.body.lname
+    const userPassword = SHA3(req.body.password).toString() // encrypt server-side
+    const userDob = req.body.dob
+    const userPassport = SHA3(req.body.passport).toString() // encrypt server-side
+    const userCountry = req.body.country
 
-    const userId = generateUniqueUserId();
+    const userId = common.generateUniqueId();
 
     // TODO: DB calls
     try {
-        await userDb.addUser(userId, userEmail, null, null, null, null, userPass, null, null, null);
+        await userDb.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
+        res.status(200).json({ success: 'User successfully added' })
     } catch (err) {
-        console.log(err);
+        console.log(err)
+        res.status(401).json({ error: 'Failed to add user' })
     }
 
     // res.status(200).json({, userLname, userDOB, userFname, userPhone, userName, userScore, userPass});
@@ -248,7 +252,6 @@ router.post('/join_pod', async (req, res) => {
             res.status(200).json({ success: 'User successfully added to pod' });
         }
     } catch (err) {
-        console.log(err);
         res.status(401).json({ error: 'Failed to add user to pod' });
     }
 })
@@ -324,14 +327,5 @@ router.post('/leave_pod', async (req, res) => {
 })
 
 // *****************************  Internal helpers *********************************** //
-
-function generateUniqueUserId() {
-    return uuidv4();
-}
-
-function getDate() {
-    return new Date()
-}
-
 
 module.exports = router;
