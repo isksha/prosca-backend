@@ -4,7 +4,6 @@ const { v4: uuidv4 } = require('uuid');
 
 var router = express.Router();
 var db =  require('../db/podsDb');
-var userpod_db =  require('../db/userPodsDb');
 
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
@@ -12,8 +11,7 @@ router.get('/', async (req, res) => {
 
     try {
         const foundPods = await db.getPods();
-        if (foundPod) {
-            // TODO: replace with DB call
+        if (foundPods) {
             res.status(200).json(foundPods);
         } else {
             res.status(404).json({error: 'No pods found'});
@@ -58,44 +56,22 @@ router.get('/transactions/:podId/', async(req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// This route is used to create a new pod
-// curl -i -X POST -d 'podName=thefirstpod&podVisibility=private&creatorID=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94' http://localhost:3000/pods/formpod
-router.post('/formpod', async (req, res) => {
-    const podName = req.body.podName;
-    const podVisibility = req.body.podVisibility;
-    const creatorID = req.body.creatorID;
-    const creationDate = Date() 
-    const podCode = generatePodInvitationCode()
-    const newPodId = generateUniquePodId();
-    
-    console.log(newPodId);
-
-    // DB calls
-    try {
-        addedPod =  await db.addPod(newPodId,podName, podVisibility, creatorID, creationDate, podCode);
-        res.status(200).json({ success: 'Pod created successfully' });
-    } catch (err) {
-        console.log(err);
-        res.status(401).json({ error: 'Failed to create pod' });
-    }
-    
-});
-
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/pods/joinpod
-router.post('/joinpod', async (req, res) => {
-    const podId = req.body.podId;
-    const userId = req.body.userId;
-    const dateJoined = Date()
+// curl -i -X POST -d 'pod_name=iskpod&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94' http://localhost:3000/pods/
+router.post('/', async (req, res) => {
+    const generatedPodId = generateUniquePodId();
+    const podName = req.body.pod_name;
+    const podVisibility = req.body.visibility;
+    const podCreatorId = req.body.pod_creator_id;
+    const podCreationDate = getDate();
+    const podCode = generatePodInvitationCode();
 
     try {
-        addedUsertoPod =  await userpod_db.addUserToPod(userId, podId, dateJoined)
-        res.status(200).json({ success: 'User successfully added to pod' });
+        const newPod = await db.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode);
+        res.status(200).json( { message: 'Created pod successfully' } );
     } catch (err) {
-        console.log(err);
-        res.status(401).json({ error: 'Failed to add user to pod' });
+        console.log(err)
+        res.status(401).json( { message: 'Failed in creating pod' } );
     }
-
- 
 });
 
 // curl -i -X POST -d 'podId=isk&userId=iskander' http://localhost:3000/pods/kick
@@ -113,7 +89,6 @@ router.post('/kick', async (req, res) => {
         res.status(401).json({ error: 'Failed to kick' });
     }
 });
-
 
 // curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/advance_cycle
 router.post('/advance_cycle', async (req, res) => {
@@ -204,6 +179,10 @@ function generatePodInvitationCode() {
 
 function generateUniquePodId() {
     return uuidv4();
+}
+
+function getDate() {
+    return new Date()
 }
 
 module.exports = router;

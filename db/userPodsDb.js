@@ -48,7 +48,7 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
             if (err) {
                 reject(`Error in addUserToPod: cannot add user to User_Pods table. ${err.message}`);
             } else if (result.affectedRows === 0) {
-                resolve(`Error in addUserToPod: No rows were modified when adding user to User_Pods table. User already in Pod`);
+                reject(`Error in addUserToPod: No rows were modified when adding user to User_Pods table. User already in Pod`);
             } else {
                 resolve(result.affectedRows) // should return 1 on success
             }
@@ -85,9 +85,37 @@ const removeUserFromPod = async(user_id, pod_id, date_joined) => {
     });
 }
 
+/*
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getPodsByUser = async (user_id) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        /*
+            Users (user_id, first_name, last_name, phone, email_address,
+            user_password, date_of_birth, score, national_id, country)
+        */
+        const query = `
+          SELECT pod_id 
+          FROM User_Pods 
+          WHERE user_id = ?
+        `;
+
+        connection.query(query, [user_id], (err, data) => {
+            if (err) {
+                reject(`Error in getPodsByUser: cannot get pods for the user. ${err.message}`);
+            } else {
+                resolve(data[0])
+            }
+        });
+        // closeConnection(connection)
+    });
+}
 
 module.exports = {
     getPodMembers,
     addUserToPod,
-    removeUserFromPod
+    removeUserFromPod,
+    getPodsByUser
 };

@@ -4,12 +4,13 @@ const cors = require("cors");
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
-const db = require('../db/usersDb');
+const userDb = require('../db/usersDb');
+var userPodDb =  require('../db/userPodsDb');
 
 // ********************************     GET routes *********************************** //
 router.get('/:userId', async (req, res) => {
     const userId = req.params.userId;
-    foundUser = await db.getUser(userId);
+    foundUser = await userDb.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
@@ -33,7 +34,7 @@ router.get('/suggest_pods/:userId', async (req, res) => {
 router.get('/suggest_friends/:userId', async (req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
@@ -46,7 +47,7 @@ router.get('/suggest_friends/:userId', async (req, res) => {
 router.get('/get_friends/:userId', async (req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
@@ -56,11 +57,28 @@ router.get('/get_friends/:userId', async (req, res) => {
     }
 });
 
+router.get('/get_pods/:userId', async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        await userDb.getUser(userId)
+        try {
+            const foundPods = await userPodDb.getPodsByUser(userId);
+            res.status(200).json(foundPods);
+        } catch (err) {
+            console.log(err)
+            res.status(404).json({ error: 'Could not get pods for user' })
+        }
+    } catch {
+        res.status(404).json({ error: 'User not found' })
+    }
+});
+
 router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
     const podId = req.params.podId;
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
 
     if (foundUser) {
         // TODO: replace with DB call
@@ -87,7 +105,7 @@ router.post('/', async (req, res) => {
 
     // TODO: DB calls
     try {
-        await db.addUser(userId, userEmail, null, null, null, null, userPass, null, null, null);
+        await userDb.addUser(userId, userEmail, null, null, null, null, userPass, null, null, null);
     } catch (err) {
         console.log(err);
     }
@@ -101,7 +119,7 @@ router.post('/', async (req, res) => {
 router.post('/authenticate', async (req, res) => {
     const userId = req.body.userId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -115,7 +133,7 @@ router.post('/authenticate', async (req, res) => {
 router.post('/calculate_reputation', async (req, res) => {
     const userId = req.body.userId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -130,7 +148,7 @@ router.post('/withdraw', async (req, res) => {
     const userId = req.body.userId
     const podId = req.body.podId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -145,7 +163,7 @@ router.post('/withdraw', async (req, res) => {
     const userId = req.body.userId
     const podId = req.body.podId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -160,7 +178,7 @@ router.post('/cast_vote', async (req, res) => {
     const userId = req.body.userId
     const voteId = req.body.voteId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -175,7 +193,7 @@ router.post('/withdraw_vote', async (req, res) => {
     const userId = req.body.userId
     const voteId = req.body.voteId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -190,7 +208,7 @@ router.post('/create_friendship', async (req, res) => {
     const userId = req.body.userId
     const user2 = req.body.user2
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -205,7 +223,7 @@ router.post('/end_friendship', async (req, res) => {
     const userId = req.body.userId
     const user2 = req.body.user2
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -215,27 +233,32 @@ router.post('/end_friendship', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk&podId=iskpod' http://localhost:3000/users/join_pod
+// curl -i -X POST -d 'podId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/join_pod
 router.post('/join_pod', async (req, res) => {
-    const userId = req.body.userId
-    const podId = req.body.podId
+    const podId = req.body.podId;
+    const userId = req.body.userId;
+    const dateJoined = getDate()
 
-    const foundUser = await db.getUser(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to join pod' });
+    try {
+        const addedUserToPod = await userPodDb.addUserToPod(userId, podId, dateJoined)
+        console.log(addedUserToPod)
+        if (addedUserToPod === 0) {
+            res.status(401).json({ error: 'User already in pod' });
+        } else {
+            res.status(200).json({ success: 'User successfully added to pod' });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(401).json({ error: 'Failed to add user to pod' });
     }
-});
+})
 
 // curl -i -X POST -d 'userId=isk&podId=iskpod' http://localhost:3000/users/leave_pod
 router.post('/leave_pod', async (req, res) => {
     const userId = req.body.userId
     const podId = req.body.podId
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -251,9 +274,8 @@ router.post('/leave_pod', async (req, res) => {
 router.put('/:userId',  async(req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
-    const foundUser = await db.getUser(userId);
         // TODO: replace with DB calls
 
         res.status(200).json(foundUser);
@@ -268,7 +290,7 @@ router.put('/:userId',  async(req, res) => {
 router.delete('/:userId', async(req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await db.getUser(userId);
+    const foundUser = await userDb.getUser(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -278,10 +300,38 @@ router.delete('/:userId', async(req, res) => {
     }
 });
 
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/leave_pod
+router.post('/leave_pod', async (req, res) => {
+    // TODO: work in progress
+    const podId = req.body.podId;
+    const userId = req.body.userId;
+
+    try {
+        userPods = await userPodDb.getPodsByUser(userId)
+        // find user's last membership by date
+        for (let i = 0; i < userPods.length; i++) {
+            if (userPods[i].pod_id === podId) {
+                dateJoined = userPods[i].date_joined
+            }
+        }
+
+        userToRemove = await userPodDb.removeUserFromPod(userId, podId, dateJoined)
+        res.status(200).json({ success: 'User successfully removed from pod' });
+    } catch (err) {
+        console.log(err);
+        res.status(401).json({ error: 'Failed to add user to pod' });
+    }
+})
+
 // *****************************  Internal helpers *********************************** //
 
 function generateUniqueUserId() {
     return uuidv4();
 }
+
+function getDate() {
+    return new Date()
+}
+
 
 module.exports = router;
