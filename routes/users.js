@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require("cors");
 
-const SHA3 = require('crypto-js/sha3');
-
 const router = express.Router();
 const userDb = require('../db/usersDb');
 const common = require('../common/common_functionalities');
@@ -91,20 +89,21 @@ router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'email=isk@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&password=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
+// curl -i -X POST -d 'email=iska@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&password=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
 router.post('/', async (req, res) => {
     const userEmail = req.body.email
     const userPhone = req.body.phone
     const userFname = req.body.fname
     const userLname = req.body.lname
-    const userPassword = SHA3(req.body.password).toString() // encrypt server-side
+    const userPassword = common.generateSHA256Hash(req.body.password) // encrypt server-side
     const userDob = req.body.dob
-    const userPassport = SHA3(req.body.passport).toString() // encrypt server-side
+    const userPassport = common.generateSHA256Hash(req.body.password) // encrypt server-side
     const userCountry = req.body.country
 
     try {
         const userExists = await userDb.getUserByEmail(userEmail);
-        if (userExists !== null) {
+        console.log(userExists)
+        if (userExists !== undefined) {
             return res.status(401).json({ error: 'User already exists' });
         }
     } catch (err) {
@@ -127,18 +126,16 @@ router.post('/', async (req, res) => {
     // TODO: error handling
 });
 
-// curl -i -X POST -d 'email=isk@isk.com&password=hello' http://localhost:3000/users/authenticate
+// curl -i -X POST -d 'email=iska@isk.com&password=hello' http://localhost:3000/users/authenticate
 router.post('/authenticate', async (req, res) => {
     const userEmail = req.body.email
     const userPassword = req.body.password
 
     const foundUser = await userDb.getUserByEmail(userEmail);
-    if (foundUser === null) {
+    if (foundUser === undefined) {
         res.status(404).json({ error: 'Failed to authenticate user' });
     } else {
-        if (foundUser.user_password !== SHA3(userPassword).toString()) {
-            console.log("SHA:           ", SHA3(userPassword).toString())
-            console.log("Password in DB:", foundUser.user_password)
+        if (foundUser.user_password !== common.generateSHA256Hash(userPassword)) {
             res.status(401).json({ error: 'Incorrect password' });
         } else {
             res.status(200).json( { success: 'Successfully logged in user' } );
