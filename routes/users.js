@@ -6,85 +6,58 @@ const userDb = require('../db/usersDb');
 const common = require('../common/common_functionalities');
 const userPodDb =  require('../db/userPodsDb');
 
+// *****************************  Internal helpers *********************************** //
+
+// Define a middleware function to check if a user exists
+const checkUserExists = async (req, res, next) => {
+    const userId = req.params.userId;
+    try {
+        req.foundUser = await userDb.getUser(userId);
+        next();
+    } catch (err) {
+        res.status(404).json({ error: 'User not found' });
+    }
+};
+
 // ********************************     GET routes *********************************** //
-router.get('/:userId', async (req, res) => {
-    const userId = req.params.userId;
-    foundUser = await userDb.getUser(userId);
-
-    if (foundUser) {
-        // TODO: replace with DB call
-        res.status(200).json(foundUser);
-    } else {
-        res.status(404).json({error: 'User not found'});
-    }
+router.get('/:userId', checkUserExists, async (req, res) => {
+    const foundUser = req.foundUser;
+    res.status(200).json(foundUser);
 });
 
-router.get('/suggest_pods/:userId', async (req, res) => {
-    const userId = req.params.userId;
-
-    if (foundUser) {
-        // TODO: replace with DB call
-        res.status(200).json(foundUser);
-    } else {
-        res.status(404).json({error: 'User not found'});
-    }
+router.get('/suggest_pods/:userId', checkUserExists, async (req, res) => {
+    const foundUser = req.foundUser;
+    res.status(200).json(foundUser);
+    // TODO: suggest pods
 });
 
-router.get('/suggest_friends/:userId', async (req, res) => {
-    const userId = req.params.userId;
-
-    const foundUser = await userDb.getUser(userId);
-
-    if (foundUser) {
-        // TODO: replace with DB call
-        res.status(200).json(foundUser);
-    } else {
-        res.status(404).json({error: 'User not found'});
-    }
+router.get('/suggest_friends/:userId', checkUserExists,async (req, res) => {
+    const foundUser = req.foundUser;
+    res.status(200).json(foundUser);
+    // TODO: suggest friends
 });
 
-router.get('/get_friends/:userId', async (req, res) => {
-    const userId = req.params.userId;
-
-    const foundUser = await userDb.getUser(userId);
-
-    if (foundUser) {
-        // TODO: replace with DB call
-        res.status(200).json(foundUser);
-    } else {
-        res.status(404).json({error: 'User not found'});
-    }
+router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
+    const foundUser = req.foundUser;
+    res.status(200).json(foundUser);
+    // TODO: get friends
 });
 
-router.get('/get_pods/:userId', async (req, res) => {
+router.get('/get_pods/:userId', checkUserExists,async (req, res) => {const foundUser = req.foundUser;
     const userId = req.params.userId;
 
     try {
-        await userDb.getUser(userId)
-        try {
-            const foundPods = await userPodDb.getPodsByUser(userId);
-            res.status(200).json(foundPods);
-        } catch (err) {
-            console.log(err)
-            res.status(404).json({ error: 'Could not get pods for user' })
-        }
-    } catch {
-        res.status(404).json({ error: 'User not found' })
+        const foundPods = await userPodDb.getPodsByUser(userId);
+        res.status(200).json(foundPods);
+    } catch (err) {
+        res.status(404).json({ error: 'Could not get pods for user' })
     }
 });
 
-router.get('/check_user_eligibility/:userId/:podId', async (req, res) => {
+router.get('/check_user_eligibility/:userId/:podId', checkUserExists, async (req, res) => {
     const podId = req.params.podId;
     const userId = req.params.userId;
-
-    const foundUser = await userDb.getUser(userId);
-
-    if (foundUser) {
-        // TODO: replace with DB call
-        res.status(200).json(foundUser);
-    } else {
-        res.status(404).json({ error: 'Pod not found' });
-    }
+    // TODO: check pod eligibility
 });
 
 // ********************************    POST routes *********************************** //
@@ -120,10 +93,6 @@ router.post('/', async (req, res) => {
         console.log(err)
         res.status(401).json({ error: 'Failed to add user' })
     }
-
-    // res.status(200).json({, userLname, userDOB, userFname, userPhone, userName, userScore, userPass});
-
-    // TODO: error handling
 });
 
 // curl -i -X POST -d 'email=iska@isk.com&password=hello' http://localhost:3000/users/authenticate
@@ -335,7 +304,5 @@ router.post('/leave_pod', async (req, res) => {
         res.status(401).json({ error: 'Failed to add user to pod' });
     }
 })
-
-// *****************************  Internal helpers *********************************** //
 
 module.exports = router;
