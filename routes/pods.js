@@ -6,53 +6,51 @@ const router = express.Router();
 const db =  require('../db/podsDb');
 const common = require('../common/common_functionalities');
 
-// ********************************     GET routes *********************************** //
-router.get('/', async (req, res) => {
-    const podId = req.params.podId;
+// *****************************  Internal helpers *********************************** //
 
-    try {
-        const foundPods = await db.getPods();
-        if (foundPods) {
-            res.status(200).json(foundPods);
-        } else {
-            res.status(404).json({error: 'No pods found'});
-        }
-        
-    } catch (err) {
-        console.log(err);
+function generatePodInvitationCode(podVisibility) {
+    if (podVisibility !== common.PRIVATE_VISIBILITY_STRING) {
+        return null;
     }
 
-});
+    const rand1 = Math.floor(Math.random() * 9).toString()
+    const rand2 = Math.floor(Math.random() * 9).toString()
+    const rand3 = Math.floor(Math.random() * 9).toString()
+    const rand4 = Math.floor(Math.random() * 9).toString()
+    const rand5 = Math.floor(Math.random() * 9).toString()
+    return rand1.concat(rand2,rand3,rand4,rand5)
+}
 
-router.get('/:podId', async (req, res) => {
+// Define a middleware function to check if a pod exists
+const checkPodExists = async (req, res, next) => {
     const podId = req.params.podId;
-
     try {
-        const foundPod = await db.getPod(podId);
-        if (foundPod) {
-            // TODO: replace with DB call
-            res.status(200).json(foundPod);
-        } else {
-            res.status(404).json({error: 'Pod not found'});
-        }
-        
+        req.foundPod = await db.getPod(podId);
+        next();
     } catch (err) {
-        console.log(err);
-    }
-
-});
-
-router.get('/transactions/:podId/', async(req, res) => {
-    const podId = req.params.podId;
-
-    const foundPod = await db.getPod(podId);
-
-    if (foundPod) {
-        // TODO: replace with DB call
-        res.status(200).json(foundPod);
-    } else {
         res.status(404).json({ error: 'Pod not found' });
     }
+}
+
+// ********************************     GET routes *********************************** //
+router.get('/', async (req, res) => {
+    try {
+        const foundPods = await db.getPods();
+        res.status(200).json(foundPods);
+    } catch (err) {
+        res.status(404).json({error: 'No pods found' });
+    }
+});
+
+router.get('/:podId', checkPodExists, async (req, res) => {
+    const foundPod = req.foundPod;
+    res.status(200).json(foundPod);
+});
+
+router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
+    const foundPod = req.foundPod;
+    res.status(200).json(foundPod);
+    // TODO: DB calls
 });
 
 // ********************************    POST routes *********************************** //
@@ -166,20 +164,5 @@ router.put('/:podId',  async(req, res) => {
 //         res.status(404).json({ error: 'Pod not found' });
 //     }
 // });
-
-// *****************************  Internal helpers *********************************** //
-
-function generatePodInvitationCode(podVisibility) {
-    if (podVisibility !== common.PRIVATE_VISIBILITY_STRING) {
-        return null;
-    }
-
-    const rand1 = Math.floor(Math.random() * 9).toString()
-    const rand2 = Math.floor(Math.random() * 9).toString()
-    const rand3 = Math.floor(Math.random() * 9).toString()
-    const rand4 = Math.floor(Math.random() * 9).toString()
-    const rand5 = Math.floor(Math.random() * 9).toString()
-    return rand1.concat(rand2,rand3,rand4,rand5)
-}
 
 module.exports = router;
