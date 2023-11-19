@@ -85,6 +85,38 @@ const removeUserFromPod = async(user_id, pod_id, date_joined) => {
     });
 }
 
+// removes based on the largest date_joined
+const removeUserFromPodAlternative = async(user_id, pod_id) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        // User_Pods(user_id, pod_id, date_joined, date_left)
+        const query = `
+            UPDATE User_Pods AS u1
+            JOIN (
+              SELECT user_id, pod_id, MAX(date_joined) AS max_date_joined
+              FROM User_Pods
+              WHERE user_id = ?
+                AND pod_id = ?
+              GROUP BY user_id, pod_id
+            ) AS u2 ON u1.user_id = u2.user_id AND u1.pod_id = u2.pod_id AND u1.date_joined = u2.max_date_joined
+            SET u1.date_left = curdate();
+        `
+        connection.query(query, [user_id, pod_id], (err, result) => {
+            if (err) {
+                reject(`Error in removeUserFromPod: cannot remove user from User_Pods table. ${err.message}`);
+            } else if (result.affectedRows === 0) {
+                reject(`
+                Error in removeUserFromPod: no rows were modified when removing 
+                {'user_id':${user_id}, 'pod_id':${pod_id}, 'date_joined':${date_joined}} from User_Pods table.
+                `);
+            } else {
+                resolve(result.affectedRows) // should return 1 on success
+            }
+        });
+        // closeConnection(connection)
+    });
+}
+
 /*
   parameters: user_id
   returns: row in Users table on success, error message on error
@@ -106,7 +138,7 @@ const getPodsByUser = async (user_id) => {
             if (err) {
                 reject(`Error in getPodsByUser: cannot get pods for the user. ${err.message}`);
             } else {
-                resolve(data[0])
+                resolve(data)
             }
         });
         // closeConnection(connection)
@@ -117,5 +149,6 @@ module.exports = {
     getPodMembers,
     addUserToPod,
     removeUserFromPod,
-    getPodsByUser
+    getPodsByUser,
+    removeUserFromPodAlternative
 };

@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require("cors");
 
 const router = express.Router();
 const userDb = require('../db/usersDb');
@@ -44,7 +43,8 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     // TODO: get friends
 });
 
-router.get('/get_pods/:userId', checkUserExists,async (req, res) => {const foundUser = req.foundUser;
+router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
+    const foundUser = req.foundUser;
     const userId = req.params.userId;
 
     try {
@@ -231,21 +231,6 @@ router.post('/join_pod', async (req, res) => {
     }
 })
 
-// curl -i -X POST -d 'userId=isk&podId=iskpod' http://localhost:3000/users/leave_pod
-router.post('/leave_pod', async (req, res) => {
-    const userId = req.body.userId
-    const podId = req.body.podId
-
-    const foundUser = await userDb.getUser(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to leave pod' });
-    }
-});
-
 // ********************************     PUT routes *********************************** //
 
 // curl -i -X PUT http://localhost:3000/users/isk
@@ -265,7 +250,7 @@ router.put('/:userId',  async(req, res) => {
 // ********************************  DELETE routes *********************************** //
 
 // curl -i -X DELETE http://localhost:3000/users/isk
-router.delete('/:userId', async(req, res) => {
+router.delete('/delete_user/:userId', async(req, res) => {
     const userId = req.params.userId;
 
     const foundUser = await userDb.getUser(userId);
@@ -278,26 +263,24 @@ router.delete('/:userId', async(req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/leave_pod
-router.post('/leave_pod', async (req, res) => {
-    // TODO: work in progress
+// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/leave_pod
+router.delete('/leave_pod/', async (req, res) => {
+    console.log("ere")
     const podId = req.body.podId;
     const userId = req.body.userId;
 
     try {
-        userPods = await userPodDb.getPodsByUser(userId)
-        // find user's last membership by date
-        for (let i = 0; i < userPods.length; i++) {
-            if (userPods[i].pod_id === podId) {
-                dateJoined = userPods[i].date_joined
-            }
+        // try to find if the user is in the pod and fail if not
+        const userPods = await userPodDb.getPodsByUser(userId);
+        if (Array.from(userPods).find(userPod => userPod.pod_id === podId) === undefined) {
+            return res.status(401).json({ error: 'User not in pod' });
         }
 
-        userToRemove = await userPodDb.removeUserFromPod(userId, podId, dateJoined)
+        userToRemove = await userPodDb.removeUserFromPodAlternative(userId, podId)
         res.status(200).json({ success: 'User successfully removed from pod' });
     } catch (err) {
         console.log(err);
-        res.status(401).json({ error: 'Failed to add user to pod' });
+        res.status(401).json({ error: 'Failed to remove user from pod' });
     }
 })
 
