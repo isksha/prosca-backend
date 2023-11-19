@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
     const podVisibility = req.body.visibility;
     const podCreatorId = req.body.pod_creator_id;
     const podCreationDate = common.getDate();
-    const podCode = generatePodInvitationCode();
+    const podCode = generatePodInvitationCode(podVisibility);
 
     try {
         const newPod = await db.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode);
@@ -169,7 +169,11 @@ router.put('/:podId',  async(req, res) => {
 
 // *****************************  Internal helpers *********************************** //
 
-function generatePodInvitationCode() {
+function generatePodInvitationCode(podVisibility) {
+    if (podVisibility !== common.PRIVATE_VISIBILITY_STRING) {
+        return null;
+    }
+
     const rand1 = Math.floor(Math.random() * 9).toString()
     const rand2 = Math.floor(Math.random() * 9).toString()
     const rand3 = Math.floor(Math.random() * 9).toString()

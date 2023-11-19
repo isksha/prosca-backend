@@ -3,8 +3,9 @@ const cors = require("cors");
 
 const router = express.Router();
 const userDb = require('../db/usersDb');
-const common = require('../common/common_functionalities');
+const podDb =  require('../db/podsDb');
 const userPodDb =  require('../db/userPodsDb');
+const common = require('../common/common_functionalities');
 
 // *****************************  Internal helpers *********************************** //
 
@@ -85,7 +86,6 @@ router.post('/', async (req, res) => {
 
     const userId = common.generateUniqueId();
 
-    // TODO: DB calls
     try {
         await userDb.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
         res.status(200).json({ success: 'User successfully added' })
@@ -112,8 +112,8 @@ router.post('/authenticate', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk' http://localhost:3000/users/calculate_reputation
-router.post('/calculate_reputation', async (req, res) => {
+// curl -i -X POST -d 'userId=isk' http://localhost:3000/users/update_reputation
+router.post('/update_reputation', async (req, res) => {
     const userId = req.body.userId
 
     const foundUser = await userDb.getUser(userId);
@@ -123,21 +123,6 @@ router.post('/calculate_reputation', async (req, res) => {
         res.status(200).json(foundUser);
     } else {
         res.status(401).json({ error: 'Failed to calculate reputation' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&podId=iskpod' http://localhost:3000/users/withdraw
-router.post('/withdraw', async (req, res) => {
-    const userId = req.body.userId
-    const podId = req.body.podId
-
-    const foundUser = await userDb.getUser(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to withdraw' });
     }
 });
 
@@ -216,14 +201,25 @@ router.post('/end_friendship', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/join_pod
+// curl -i -X POST -d 'podId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=c24203d3-1fce-4dc9-9aac-0c42b4499722&podCode=53081' http://localhost:3000/users/join_pod
 router.post('/join_pod', async (req, res) => {
-    const podId = req.body.podId;
-    const userId = req.body.userId;
-    const dateJoined = getDate()
+    const podId = req.body.podId
+    const userId = req.body.userId
+    const dateJoined = common.getDate()
+    const podCode = parseInt(req.body.podCode)
+
+    // check if code matches for private pod
+    try {
+        const foundPod = await podDb.getPod(podId);
+        if (foundPod.visibility === common.PRIVATE_VISIBILITY_STRING && foundPod.pod_code !== podCode) {
+            return res.status(401).json({ error: 'Invalid pod invite pod' });
+        }
+    } catch (err) {
+        res.status(401).json({ error: 'Failed to add user to pod' });
+    }
 
     try {
-        const addedUserToPod = await userPodDb.addUserToPod(userId, podId, dateJoined)
+        const addedUserToPod = await userPodDb.addUserToPod(userId, podId, dateJoined, podCode)
         console.log(addedUserToPod)
         if (addedUserToPod === 0) {
             res.status(401).json({ error: 'User already in pod' });
