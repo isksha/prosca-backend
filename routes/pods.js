@@ -73,33 +73,42 @@ router.post('/', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=isk&userId=iskander' http://localhost:3000/pods/kick
-router.post('/kick', async (req, res) => {
-    const podId = req.body.podId;
-    const userToKick = req.body.userId;
 
-    // TODO: DB calls
-    const foundPod = await db.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&recurrenceRate=weekly&contributionAmount=250' http://localhost:3000/pods/create_cycle
+router.post('/create_cycle', async (req, res) => {
+    const podId = req.body.podId
+    const recurrenceRate = req.body.recurrenceRate
+    const contributionAmount = parseFloat(req.body.contributionAmount)
+    const cycleId = common.generateUniqueId();
+    const startDate = common.getDate();
 
-        res.status(200).json(foundPod);
-    } else {
-        res.status(401).json({ error: 'Failed to kick' });
+    try {
+        const newCycle = await db.addCycle(cycleId, startDate,podId, recurrenceRate,contributionAmount);
+        res.status(200).json( { success: 'Created cycle successfully' } );
+    } catch (err) {
+        console.log(err)
+        res.status(401).json( { error: 'Failed in creating cycle' } );
     }
 });
 
-// curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/advance_cycle
-router.post('/advance_cycle', async (req, res) => {
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/renew_cycle
+router.post('/renew_cycle', async (req, res) => {
     const podId = req.body.podId
+    const startDate = common.getDate();
 
-    const foundPod = await db.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundPod);
-    } else {
-        res.status(401).json({ error: 'Failed to form pod' });
+    try {
+        const activeCycle = await db.fetchActiveCycle(podId)
+        if (activeCycle !== undefined){
+            const cycleClosed = await db.endCycle(activeCycle.cycle_id,activeCycle.start_date);
+            console.log(cycleClosed)
+            const renewedCycle = await db.addCycle(activeCycle.cycle_id, startDate,podId, activeCycle.recurrence_rate,activeCycle.contribution_amount);
+            res.status(200).json( { success: 'Renewed cycle successfully' } );
+        } else{
+            res.status(401).json( { error: 'Pod has no active Cycles' } );
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(401).json( { error: 'Failed in renewing cycle' } );
     }
 });
 
@@ -151,18 +160,22 @@ router.put('/:podId',  async(req, res) => {
 
 // ********************************  DELETE routes *********************************** //
 
-// curl -i -X DELETE http://localhost:3000/pods/isk
-// router.delete('/:podId', async(req, res) => {
-//     const podId = req.params.podId;
+// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/end_cycle
+router.delete('/end_cycle', async (req, res) => {
+    const podId = req.body.podId
 
-//     const foundPod = await db.getPod(podId);
-//     if (foundPod) {
-//         // TODO: replace with DB calls
-
-//         res.status(200).json(foundPod);
-//     } else {
-//         res.status(404).json({ error: 'Pod not found' });
-//     }
-// });
+    try {
+        const activeCycle = await db.fetchActiveCycle(podId)
+        if (activeCycle !== undefined){
+            const cycletoremove = await db.endCycle(activeCycle.cycle_id,activeCycle.start_date);
+            res.status(200).json( { success: 'Cycle closed successfully' } );
+        } else{
+            res.status(401).json( { error: 'Pod has no active Cycles' } );
+        }
+    } catch (err) {
+        console.log(err)
+        res.status(401).json( { error: 'Failed in closing cycle' } );
+    }
+});
 
 module.exports = router;

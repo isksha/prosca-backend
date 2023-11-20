@@ -79,7 +79,68 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date,pod_cod
   });
 }
 
-const addCycle = async(pod_id, recurrence_rate, individual_constribution_rate) => {
+const addCycle = async(cycle_id, start_date, pod_id, recurrence_rate, contribution_amount) => {
+  const connection = openConnection()
+  return new Promise((resolve, reject) => {
+    //Pod_Cycles(cycle_id, start_date, pod_id, end_date, recurrence_rate,contribution_amount)
+    const query = `
+    INSERT INTO Pod_Cycles (cycle_id, start_date, pod_id, recurrence_rate, contribution_amount) 
+    VALUES (?, ?, ?, ?, ?)
+    `
+    connection.query(query, [cycle_id, start_date, pod_id, recurrence_rate, contribution_amount], (err, result) => {
+      if (err) {
+        reject(`Error in addCycle: cannot add Cycle to Pod_Cycle Table. ${err.message}`);
+      } else if (result.affectedRows === 0) {
+        reject(`Error in addCycle: no rows were modified when adding cycle to Pod_Cycle table.`);
+      } else {
+        resolve(result.affectedRows) // should return 1 on success
+      }
+    });
+    // closeConnection(connection)
+  });
+}
+
+const fetchActiveCycle = async(pod_id) => {
+  const connection = openConnection()
+  return new Promise((resolve, reject) => {
+    //Pod_Cycles(cycle_id, start_date, pod_id, end_date, recurrence_rate,contribution_amount)
+    const query = `
+    SELECT * FROM Pod_Cycles
+    WHERE pod_id = ? AND end_date IS NULL
+    `
+    connection.query(query, [pod_id], (err, data) => {
+      if (err) {
+        reject(`Error in fetchActiveCycle: cannot fetch active cycle from Pod_Cycle Table. ${err.message}`);
+      } else if (data.affectedRows === 0) {
+        reject(`Error in fetchActiveCycle: no rows Pod_Cycle table matched pod_id`);
+      } else {
+        resolve(data[0]) // should return 1 on success
+      }
+    });
+    // closeConnection(connection)
+  });
+}
+
+const endCycle = async(cycle_id,start_date) => {
+  const connection = openConnection()
+  return new Promise((resolve, reject) => {
+    //Pod_Cycles(cycle_id, start_date, pod_id, end_date, recurrence_rate,contribution_amount)
+    const query = `
+    UPDATE Pod_Cycles
+    SET end_date = NOW()
+    WHERE cycle_id = ? AND start_date = ?
+    `
+    connection.query(query, [cycle_id, start_date], (err, result) => {
+      if (err) {
+        reject(`Error in addCycle: cannot end Cycle. ${err.message}`);
+      } else if (result.affectedRows === 0) {
+        reject(`Error in addCycle: no rows were modified when closing cycle to Pod_Cycle table.`);
+      } else {
+        resolve(result.affectedRows) // should return 1 on success
+      }
+    });
+    // closeConnection(connection)
+  });
 }
 
 const getCycleStatement = async(pod_id) => {
@@ -93,6 +154,8 @@ module.exports = {
     getPods,
     getPod,
     addCycle,
+    fetchActiveCycle,
+    endCycle,
     getCycleStatement,
     addPod
 };
