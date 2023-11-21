@@ -1,4 +1,5 @@
 const {openConnection, closeConnection} = require("./dbConnection");
+const common = require('../common/common_functionalities');
 
 /* 
   parameters: user_id
@@ -25,6 +26,65 @@ const getUser = async (user_id) => {
           } else {
             resolve(data[0])
           }
+        });
+        // closeConnection(connection)
+    });
+}
+
+/*
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getUserByEmail = async (email) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        /*
+            Users (user_id, first_name, last_name, phone, email_address,
+            user_password, date_of_birth, score, national_id, country)
+        */
+        const query = `
+          SELECT * 
+          FROM Users 
+          WHERE email_address = ?
+        `;
+
+        connection.query(query, [email], (err, data) => {
+            if (err) {
+                reject(`Error in getUserByEmail: cannot get user from Users table. ${err.message}`);
+            } else {
+                resolve(data[0])
+            }
+        });
+        // closeConnection(connection)
+    });
+}
+
+/*
+  parameters: user_id, email_address, phone_number, first_name, last_name, 
+              password, date_of_birth, national_id, country
+  returns: 1 on success, error message on error
+*/
+const addUser = async (user_id, email_address, phone_number, first_name, last_name, password, date_of_birth, national_id, country) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        /*
+            Users (user_id, first_name, last_name, phone, email_address, 
+            user_password, date_of_birth, score, national_id, country)
+        */
+
+        // TODO: change initial score value
+        const query = `
+        INSERT INTO Users (user_id, first_name, last_name, phone, email_address, user_password, date_of_birth, score, wallet_amount, national_id, country) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+        `
+        connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, common.DEFAULT_USER_SCORE, national_id, country], (err, result) => {
+            if (err) {
+                reject(`Error in addUser: cannot add user to Users table. ${err.message}`);
+              } else if (result.affectedRows === 0) {
+                reject(`Error in addUser: no rows were modified when adding user to Users table.`);
+              } else {
+                resolve(result.affectedRows) // should return 1 on success
+              }
         });
         // closeConnection(connection)
     });
@@ -63,5 +123,6 @@ const addUser = async (user_id, email_address, phone_number, first_name, last_na
 
 module.exports = {
     getUser,
-    addUser
+    addUser,
+    getUserByEmail
 };
