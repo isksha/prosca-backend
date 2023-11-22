@@ -2,7 +2,7 @@ const {openConnection, closeConnection} = require("./dbConnection");
 
 /* 
     parameters: pod_id
-    returns: list of User_Pods rows on success, error message on error
+    returns: list of current users in pod with pod_id on success, error message on error
 */
 const getPodMembers = async(pod_id) => {
     const connection = openConnection()
@@ -26,9 +26,6 @@ const getPodMembers = async(pod_id) => {
     });
 }
 
-// getPodMembers(1).then((hehe) => console.log("success")).catch((err) => console.log("fail"))
-
-
 /* 
     parameters: user_id, pod_id, date_joined
     returns: 1 on success, error message on error
@@ -37,13 +34,13 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
         // User_Pods(user_id, pod_id, date_joined, date_left)
-        // Users already in a pod are not re-added
+        // Users already in a pod are not re-added, can be re-added if they left the pod
         const query = `
-        INSERT INTO User_Pods (user_id, pod_id,date_joined)
-        SELECT * FROM (SELECT '${user_id}', '${pod_id}', NOW() as date_joined) AS Tmp
-        WHERE NOT EXISTS(SELECT * FROM User_Pods WHERE user_id = '${user_id}' AND pod_id = '${pod_id}' AND date_left IS NULL) LIMIT 1;
+        INSERT INTO User_Pods (user_id, pod_id, date_joined)
+        SELECT ?, ?, ? FROM User_Pods
+        WHERE NOT EXISTS (SELECT 1 FROM User_Pods WHERE user_id = ? AND pod_id = ? AND date_left IS NULL);
         `
-        connection.query(query, [user_id, pod_id, date_joined], (err, result) => {
+        connection.query(query, [user_id, pod_id, date_joined, user_id, pod_id], (err, result) => {
             if (err) {
                 reject(`Error in addUserToPod: cannot add user to User_Pods table. ${err.message}`);
             } else if (result.affectedRows === 0) {
@@ -57,56 +54,25 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
 }
 
 /* 
-    parameters: user_id, od_id, date_joined
+    parameters: user_id, pod_id
     returns: 1 on success, error message on error
 */
-const removeUserFromPod = async(user_id, pod_id, date_joined) => {
+const removeUserFromPod = async(user_id, pod_id) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
         // User_Pods(user_id, pod_id, date_joined, date_left)
         const query = `
-        DELETE FROM User_Pods 
-        WHERE user_id = ? AND pod_id = ? AND date_joined = ?
-        `
-        connection.query(query, [user_id, pod_id, date_joined], (err, result) => {
-            if (err) {
-                reject(`Error in removeUserFromPod: cannot remove user from User_Pods table. ${err.message}`);
-            } else if (result.affectedRows === 0) {
-                reject(`
-                Error in removeUserFromPod: no rows were modified when removing 
-                {'user_id':${user_id}, 'pod_id':${pod_id}, 'date_joined':${date_joined}} from User_Pods table.
-                `);
-            } else {
-                resolve(result.affectedRows) // should return 1 on success
-            }
-        });
-        // closeConnection(connection)
-    });
-}
-
-// removes based on the largest date_joined
-const removeUserFromPodAlternative = async(user_id, pod_id) => {
-    const connection = openConnection()
-    return new Promise((resolve, reject) => {
-        // User_Pods(user_id, pod_id, date_joined, date_left)
-        const query = `
-            UPDATE User_Pods AS u1
-            JOIN (
-              SELECT user_id, pod_id, MAX(date_joined) AS max_date_joined
-              FROM User_Pods
-              WHERE user_id = ?
-                AND pod_id = ?
-              GROUP BY user_id, pod_id
-            ) AS u2 ON u1.user_id = u2.user_id AND u1.pod_id = u2.pod_id AND u1.date_joined = u2.max_date_joined
-            SET u1.date_left = curdate();
+        UPDATE User_Pods
+        SET date_left = NOW()
+        WHERE user_id = ? AND pod_id = ? AND date_left is NULL
         `
         connection.query(query, [user_id, pod_id], (err, result) => {
             if (err) {
-                reject(`Error in removeUserFromPod: cannot remove user from User_Pods table. ${err.message}`);
+                reject(`Error in removeUserFromPod: cannot remove user from pod in User_Pods table. ${err.message}`);
             } else if (result.affectedRows === 0) {
                 reject(`
                 Error in removeUserFromPod: no rows were modified when removing 
-                {'user_id':${user_id}, 'pod_id':${pod_id}, 'date_joined':${date_joined}} from User_Pods table.
+                user_id:${user_id}, pod_id:${pod_id} from User_Pods table.
                 `);
             } else {
                 resolve(result.affectedRows) // should return 1 on success
@@ -118,24 +84,25 @@ const removeUserFromPodAlternative = async(user_id, pod_id) => {
 
 /*
   parameters: user_id
-  returns: row in Users table on success, error message on error
+  returns: pod_ids of pods user iscurrently in on success, error message on error
 */
-const getPodsByUser = async (user_id) => {
+const getUserPods = async (user_id) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
         /*
-            Users (user_id, first_name, last_name, phone, email_address,
-            user_password, date_of_birth, score, national_id, country)
+            User_Pods(user_id, pod_id, date_joined, date_left)
         */
         const query = `
           SELECT pod_id 
           FROM User_Pods 
-          WHERE user_id = ?
+          WHERE user_id = ? AND date_left IS NULL
         `;
 
         connection.query(query, [user_id], (err, data) => {
             if (err) {
-                reject(`Error in getPodsByUser: cannot get pods for the user. ${err.message}`);
+                reject(`Error in getUserPods: cannot get pods of user with id: ${user_id} from User_Pods table. ${err.message}`);
+            } else if (data.length === 0) {
+                reject(`Error in getUserPods: no rows in the User_Pods table matched user_id: ${user_id}. User is currently not in any pods`);
             } else {
                 resolve(data)
             }
@@ -144,10 +111,10 @@ const getPodsByUser = async (user_id) => {
     });
 }
 
+
 module.exports = {
     getPodMembers,
     addUserToPod,
     removeUserFromPod,
-    getPodsByUser,
-    removeUserFromPodAlternative
+    getUserPods
 };
