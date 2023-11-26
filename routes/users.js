@@ -27,7 +27,6 @@ router.get('/', async (req, res) => {
         const foundUsers = await dao.getAllUsers();
         res.status(200).json(foundUsers);
     } catch (err) {
-        console.log("what is happening")
         res.status(404).json({error: 'No users found' });
     }
 
@@ -90,7 +89,7 @@ router.post('/', async (req, res) => {
     const userLname = req.body.lname
     const userPassword = common.generateSHA256Hash(req.body.password) // encrypt server-side
     const userDob = req.body.dob
-    const userNationalId = common.generateSHA256Hash(req.body.nationalid) // encrypt server-side
+    const userPassport = common.generateSHA256Hash(req.body.nationalid) // encrypt server-side
     const userCountry = req.body.country
 
     try {
