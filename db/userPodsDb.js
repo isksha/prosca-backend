@@ -100,10 +100,13 @@ const getUserPods = async (user_id) => {
 
         connection.query(query, [user_id], (err, data) => {
             if (err) {
+                console.log("error")
                 reject(`Error in getUserPods: cannot get pods of user with id: ${user_id} from User_Pods table. ${err.message}`);
             } else if (data.length === 0) {
+                console.log("empty")
                 reject(`Error in getUserPods: no rows in the User_Pods table matched user_id: ${user_id}. User is currently not in any pods`);
             } else {
+                console.log("success")
                 resolve(data)
             }
         });

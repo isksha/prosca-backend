@@ -3,9 +3,6 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
-const userDb = require('../db/usersDb');
-const podDb =  require('../db/podsDb');
-const userPodDb =  require('../db/userPodsDb');
 const common = require('../common/common_functionalities');
 
 const dao = require('../db/dataAccessor');
@@ -16,49 +13,67 @@ const dao = require('../db/dataAccessor');
 const checkUserExists = async (req, res, next) => {
     const userId = req.params.userId;
     try {
-        req.foundUser = await userDb.getUserById(userId);
+        req.foundUser = await dao.getUserById(userId);
         next();
     } catch (err) {
-        res.status(404).json({ error: 'User not found' });
+        res.status(404).json({ error: 'UNF' });
     }
 };
 
 // ********************************     GET routes *********************************** //
+
+router.get('/', async (req, res) => {
+    try {
+        const foundUsers = await dao.getAllUsers();
+        res.status(200).json(foundUsers);
+    } catch (err) {
+        console.log("what is happening")
+        res.status(404).json({error: 'No users found' });
+    }
+
+});
+
+// ELDA: unfinished
 router.get('/:userId', checkUserExists, async (req, res) => {
     const foundUser = req.foundUser;
     res.status(200).json(foundUser);
 });
 
+// ELDA: unfinished
 router.get('/suggest_pods/:userId', checkUserExists, async (req, res) => {
     const foundUser = req.foundUser;
     res.status(200).json(foundUser);
     // TODO: suggest pods
 });
 
+// ELDA: unfinished
 router.get('/suggest_friends/:userId', checkUserExists,async (req, res) => {
     const foundUser = req.foundUser;
     res.status(200).json(foundUser);
     // TODO: suggest friends
 });
 
+// ELDA: unfinished
 router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     const foundUser = req.foundUser;
     res.status(200).json(foundUser);
     // TODO: get friends
 });
 
+
 router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     const foundUser = req.foundUser;
     const userId = req.params.userId;
 
     try {
-        const foundPods = await userPodDb.getUserPods(userId);
+        const foundPods = await dao.getUserPods(userId);
         res.status(200).json(foundPods);
     } catch (err) {
         res.status(404).json({ error: 'Could not get pods for user' })
     }
 });
 
+// ELDA: unfinished
 router.get('/check_user_eligibility/:userId/:podId', checkUserExists, async (req, res) => {
     const podId = req.params.podId;
     const userId = req.params.userId;
@@ -104,7 +119,7 @@ router.post('/authenticate', async (req, res) => {
     const userEmail = req.body.email
     const userPassword = req.body.password
 
-    const foundUser = await userDb.getUserByEmail(userEmail);
+    const foundUser = await dao.getUserByEmail(userEmail);
     if (foundUser === undefined) {
         res.status(404).json({ error: 'Failed to authenticate user' });
     } else {
@@ -120,7 +135,7 @@ router.post('/authenticate', async (req, res) => {
 router.post('/update_reputation', async (req, res) => {
     const userId = req.body.userId
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -135,7 +150,7 @@ router.post('/withdraw', async (req, res) => {
     const userId = req.body.userId
     const podId = req.body.podId
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -150,7 +165,7 @@ router.post('/cast_vote', async (req, res) => {
     const userId = req.body.userId
     const voteId = req.body.voteId
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -165,7 +180,7 @@ router.post('/withdraw_vote', async (req, res) => {
     const userId = req.body.userId
     const voteId = req.body.voteId
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -180,7 +195,7 @@ router.post('/create_friendship', async (req, res) => {
     const userId = req.body.userId
     const user2 = req.body.user2
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -195,7 +210,7 @@ router.post('/end_friendship', async (req, res) => {
     const userId = req.body.userId
     const user2 = req.body.user2
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
 
@@ -214,7 +229,7 @@ router.post('/join_pod', async (req, res) => {
 
     // check if code matches for private pod
     try {
-        const foundPod = await podDb.getPod(podId);
+        const foundPod = await dao.getPod(podId);
         if (foundPod.visibility === common.PRIVATE_VISIBILITY_STRING && foundPod.pod_code !== podCode) {
             return res.status(401).json({ error: 'Invalid pod invite pod' });
         }
@@ -223,7 +238,7 @@ router.post('/join_pod', async (req, res) => {
     }
 
     try {
-        const addedUserToPod = await userPodDb.addUserToPod(userId, podId, dateJoined, podCode)
+        const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined, podCode)
         console.log(addedUserToPod)
         if (addedUserToPod === 0) {
             res.status(401).json({ error: 'User already in pod' });
@@ -241,7 +256,7 @@ router.post('/join_pod', async (req, res) => {
 router.put('/:userId',  async(req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -257,7 +272,7 @@ router.put('/:userId',  async(req, res) => {
 router.delete('/delete_user/:userId', async(req, res) => {
     const userId = req.params.userId;
 
-    const foundUser = await userDb.getUserById(userId);
+    const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls
 
@@ -275,12 +290,12 @@ router.delete('/leave_pod/', async (req, res) => {
 
     try {
         // try to find if the user is in the pod and fail if not
-        const userPods = await userPodDb.getUserPods(userId);
+        const userPods = await dao.getUserPods(userId);
         if (Array.from(userPods).find(userPod => userPod.pod_id === podId) === undefined) {
             return res.status(401).json({ error: 'User not in pod' });
         }
 
-        userToRemove = await userPodDb.removeUserFromPod(userId, podId)
+        userToRemove = await dao.removeUserFromPod(userId, podId)
         res.status(200).json({ success: 'User successfully removed from pod' });
     } catch (err) {
         console.log(err);
