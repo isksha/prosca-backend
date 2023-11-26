@@ -82,7 +82,7 @@ router.get('/check_user_eligibility/:userId/:podId', checkUserExists, async (req
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'email=iska@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&password=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
+// curl -i -X POST -d 'email=iska@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&nationalid=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
 router.post('/', async (req, res) => {
     const userEmail = req.body.email
     const userPhone = req.body.phone
@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
     const userLname = req.body.lname
     const userPassword = common.generateSHA256Hash(req.body.password) // encrypt server-side
     const userDob = req.body.dob
-    const userPassport = common.generateSHA256Hash(req.body.password) // encrypt server-side
+    const userNationalId = common.generateSHA256Hash(req.body.nationalid) // encrypt server-side
     const userCountry = req.body.country
 
     try {
