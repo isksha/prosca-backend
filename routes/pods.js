@@ -1,6 +1,4 @@
 const express = require('express');
-const cors = require("cors");
-const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 const common = require('../common/common_functionalities');

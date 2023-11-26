@@ -1,15 +1,14 @@
 const express = require('express');
-const cors = require("cors");
-const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
-const db = require('../db/walletsDb');
+const common = require('../common/common_functionalities');
+const dao = require('../db/dataAccessor');
 
 // ********************************     GET routes *********************************** //
 router.get('/:walletId', async (req, res) => {
     const walletId = req.params.walletId;
 
-    const foundWallet = await db.getWallet(walletId);
+    const foundWallet = await dao.getWallet(walletId);
 
     if (foundWallet) {
         // TODO: replace with DB call
@@ -26,7 +25,7 @@ router.post('/', async (req, res) => {
     const walletType = req.body.walletType;
     const walletCardNumber = req.body.cardNumber;
 
-    const newTransactionId = generateUniqueWalletId();
+    const newTransactionId = common.generateUniqueId()
 
     // TODO: DB calls
 
@@ -43,7 +42,7 @@ router.post('/', async (req, res) => {
 router.delete('/:walletId', async(req, res) => {
     const walletId = req.params.walletId;
 
-    const foundWallet = await db.getWallet(walletId);
+    const foundWallet = await dao.getWallet(walletId);
     if (foundWallet) {
         // TODO: replace with DB calls
 
@@ -54,9 +53,5 @@ router.delete('/:walletId', async(req, res) => {
 });
 
 // *****************************  Internal helpers *********************************** //
-
-function generateUniqueWalletId() {
-    return uuidv4();
-}
 
 module.exports = router;

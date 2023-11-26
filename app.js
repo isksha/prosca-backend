@@ -1,15 +1,16 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
-var app = express();
+const app = express();
 
-var usersRouter = require('./routes/users');
-var podsRouter = require('./routes/pods');
-var votesRouter = require('./routes/votes');
-var walletsRouter = require('./routes/wallets');
-var transactionsRouter = require('./routes/transactions');
+const usersRouter = require('./routes/users');
+const podsRouter = require('./routes/pods');
+const votesRouter = require('./routes/votes');
+const walletsRouter = require('./routes/wallets');
+const depositsRouter = require('./routes/deposits');
+const withdrawalsRouter = require('./routes/withdrawals');
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use('/users', usersRouter);
 app.use('/pods', podsRouter);
 app.use('/votes', votesRouter);
 app.use('/wallets', walletsRouter);
-app.use('/transactions', transactionsRouter);
+app.use('/deposits', depositsRouter);
+app.use('/withdrawals', withdrawalsRouter);
 
 module.exports = app;

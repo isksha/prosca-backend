@@ -1,7 +1,5 @@
 const express = require('express');
 
-const { v4: uuidv4 } = require('uuid');
-
 const router = express.Router();
 const common = require('../common/common_functionalities');
 

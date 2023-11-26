@@ -1,16 +1,14 @@
 const express = require('express');
-const cors = require("cors");
-const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
-const db = require('../db/votesDb');
-const {getTransaction} = require("../db/transactionsDb");
+const dao = require('../db/dataAccessor');
+const common = require('../common/common_functionalities');
 
 // ********************************     GET routes *********************************** //
 router.get('/:voteId', async (req, res) => {
     const voteId = req.params.voteId;
 
-    const foundVote = await db.getVote(voteId);
+    const foundVote = await dao.getVote(voteId);
 
     if (foundVote) {
         // TODO: replace with DB call
@@ -27,11 +25,11 @@ router.post('/', async (req, res) => {
     const isVoteFor = req.body.isVoteFor;
     const voteType = req.body.voteType;
 
-    const newTransactionId = generateUniqueVoteId();
+    const newTransactionId = common.generateUniqueId()
 
     // TODO: DB calls
 
-    res.status(200).json({isVoteFor, voteType});
+    res.status(200).json({isVoteFor, voteType})
 
     // TODO: error handling
 });
@@ -64,9 +62,5 @@ router.post('/check_termination_and_terminate_conditionally/', async (req, res) 
 // ********************************  DELETE routes *********************************** //
 
 // *****************************  Internal helpers *********************************** //
-
-function generateUniqueVoteId() {
-    return uuidv4();
-}
 
 module.exports = router;
