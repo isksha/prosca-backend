@@ -123,7 +123,7 @@ router.post('/authenticate', async (req, res) => {
         if (foundUser.user_password !== common.generateSHA256Hash(userPassword)) {
             res.status(401).json({ error: 'Incorrect password' });
         } else {
-            res.status(200).json( { success: 'Successfully logged in user' } );
+            res.status(200).json(foundUser);
         }
     }
 });
