@@ -3,9 +3,9 @@ const cors = require("cors");
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
-const db =  require('../db/podsDb');
 const common = require('../common/common_functionalities');
 
+const dao = require('../db/dataAccessor');
 // *****************************  Internal helpers *********************************** //
 
 function generatePodInvitationCode(podVisibility) {
@@ -25,7 +25,7 @@ function generatePodInvitationCode(podVisibility) {
 const checkPodExists = async (req, res, next) => {
     const podId = req.params.podId;
     try {
-        req.foundPod = await db.getPod(podId);
+        req.foundPod = await dao.getPod(podId);
         next();
     } catch (err) {
         res.status(404).json({ error: 'Pod not found' });
@@ -35,11 +35,36 @@ const checkPodExists = async (req, res, next) => {
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
     try {
-        const foundPods = await db.getPods();
+        const foundPods = await dao.getAllPods();
         res.status(200).json(foundPods);
     } catch (err) {
         res.status(404).json({error: 'No pods found' });
     }
+
+});
+
+router.get('/lifetimes/', async (req, res) => {
+
+    try {
+        const foundLifetimes = await dao.fetchAllLifetimes();
+        res.status(200).json(foundLifetimes);
+    } catch (err) {
+        res.status(404).json({ error: 'Could not get lifetimes for pod' })
+    }
+
+});
+
+router.get('/lifetimes/:podId', async (req, res) => {
+    const foundPod = req.foundPod;
+    const podId = req.params.podId;
+
+    try {
+        const foundLifetimes = await dao.fetchAllPodLifetimes(podId);
+        res.status(200).json(foundLifetimes);
+    } catch (err) {
+        res.status(404).json({ error: 'Could not get lifetimes for pod' })
+    }
+
 });
 
 router.get('/:podId', checkPodExists, async (req, res) => {
@@ -55,7 +80,7 @@ router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'pod_name=iskpod&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94' http://localhost:3000/pods/
+// curl -i -X POST -d 'pod_name=iskpod&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&pod_size=3&recur_rate=weekly&contr_amount=50'' http://localhost:3000/pods/
 router.post('/', async (req, res) => {
     const generatedPodId = common.generateUniqueId();
     const podName = req.body.pod_name;
@@ -63,9 +88,15 @@ router.post('/', async (req, res) => {
     const podCreatorId = req.body.pod_creator_id;
     const podCreationDate = common.getDate();
     const podCode = generatePodInvitationCode(podVisibility);
+    const podSize = req.body.pod_size;
+
+    const generatedLifetimeId = common.generateUniqueId();
+    const recurrenceRate = req.body.recur_rate;
+    const contributionAmount = req.body.contr_amount;
 
     try {
-        const newPod = await db.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode);
+        const newPod = await dao.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode, podSize);
+        const lifetime = await dao.createLifetime(generatedLifetimeId, generatedPodId, recurrenceRate, contributionAmount)
         res.status(200).json( { success: 'Created pod successfully' } );
     } catch (err) {
         console.log(err)
@@ -73,51 +104,53 @@ router.post('/', async (req, res) => {
     }
 });
 
-
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&recurrenceRate=weekly&contributionAmount=250' http://localhost:3000/pods/create_cycle
-router.post('/create_cycle', async (req, res) => {
+/* ELDA: this is only used when users want to create 
+a lifetime in a pod that has already been created (perhaps 
+after they finished their initial lifetime and dont have 
+an active lifetime) */
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&recur_rate=weekly&contr_amount=250' http://localhost:3000/pods/create_lifetime
+router.post('/create_lifetime', async (req, res) => {
     const podId = req.body.podId
-    const recurrenceRate = req.body.recurrenceRate
-    const contributionAmount = parseFloat(req.body.contributionAmount)
-    const cycleId = common.generateUniqueId();
-    const startDate = common.getDate();
+    const generatedLifetimeId = common.generateUniqueId();
+    const recurrenceRate = req.body.recur_rate;
+    const contributionAmount = req.body.contr_amount;
 
     try {
-        const newCycle = await db.addCycle(cycleId, startDate,podId, recurrenceRate,contributionAmount);
-        res.status(200).json( { success: 'Created cycle successfully' } );
+        const lifetime = await dao.createLifetime(generatedLifetimeId, podId, recurrenceRate, contributionAmount)
+        res.status(200).json( { success: 'Created lifetime successfully' } );
     } catch (err) {
-        console.log(err)
-        res.status(401).json( { error: 'Failed in creating cycle' } );
+        res.status(401).json( { error: 'Failed in creating lifetime' } );
     }
 });
 
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/renew_cycle
-router.post('/renew_cycle', async (req, res) => {
-    const podId = req.body.podId
-    const startDate = common.getDate();
+// ELDA: renew not needed anymore. if users want to 'renew lifeitme, they can recreate it
+// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/renew_lifetime
+// router.post('/renew_lifetime', async (req, res) => {
+//     const podId = req.body.podId
+//     const startDate = common.getDate();
 
-    try {
-        const activeCycle = await db.fetchActiveCycle(podId)
-        if (activeCycle !== undefined){
-            const cycleClosed = await db.endCycle(activeCycle.cycle_id,activeCycle.start_date);
-            console.log(cycleClosed)
-            const renewedCycle = await db.addCycle(activeCycle.cycle_id, startDate,podId, activeCycle.recurrence_rate,activeCycle.contribution_amount);
-            res.status(200).json( { success: 'Renewed cycle successfully' } );
-        } else{
-            res.status(401).json( { error: 'Pod has no active Cycles' } );
-        }
-    } catch (err) {
-        console.log(err)
-        res.status(401).json( { error: 'Failed in renewing cycle' } );
-    }
-});
+//     try {
+//         const activeLifetime = await dao.fetchActiveLifetime(podId)
+//         if (activeLifetime !== undefined){
+//             const lifetimeClosed = await dao.endLifetime(activeLifetime.lifetime_id,activeLifetime.start_date);
+//             console.log(lifetimeClosed)
+//             const renewedLifetime = await dao.addLifetime(activeLifetime.lifetime_id, startDate,podId, activeLifetime.recurrence_rate,activeLifetime.contribution_amount);
+//             res.status(200).json( { success: 'Renewed lifetime successfully' } );
+//         } else{
+//             res.status(401).json( { error: 'Pod has no active Lifetimes' } );
+//         }
+//     } catch (err) {
+//         console.log(err)
+//         res.status(401).json( { error: 'Failed in renewing lifetime' } );
+//     }
+// });
 
 // curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/initiate_vote
 router.post('/initiate_vote', async(req, res) => {
     const podId = req.body.podId
     const voteId = req.body.voteId
 
-    const foundPod = await db.getPod(podId);
+    const foundPod = await dao.getPod(podId);
     if (foundPod) {
         // TODO: replace with DB calls
 
@@ -132,7 +165,7 @@ router.post('/accept_vote_decision', async (req, res) => {
     const podId = req.body.podId
     const voteId = req.body.voteId
 
-    const foundPod = await db.getPod(podId);
+    const foundPod = await dao.getPod(podId);
     if (foundPod) {
         // TODO: replace with DB calls
 
@@ -148,7 +181,7 @@ router.post('/accept_vote_decision', async (req, res) => {
 router.put('/:podId',  async(req, res) => {
     const podId = req.params.podId;
 
-    const foundPod = await db.getPod(podId);
+    const foundPod = await dao.getPod(podId);
     if (foundPod) {
         // TODO: replace with DB calls
 
@@ -158,23 +191,35 @@ router.put('/:podId',  async(req, res) => {
     }
 });
 
+// curl -i -X PUT http://localhost:3000/pods/start_lifetime/060fb2ff-0c43-4ef1-8578-b49b67f08a82
+router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
+    const lifetimeId = req.params.lifetimeId;
+
+    try {
+        const startedLifetime = await dao.startLifetime(lifetimeId);
+        res.status(200).json( { success: 'Started lifetime successfully' } );
+    } catch (err) {
+        res.status(401).json( { error: 'Failed in starting lifetime' } );
+    }
+});
+
 // ********************************  DELETE routes *********************************** //
 
-// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/end_cycle
-router.delete('/end_cycle', async (req, res) => {
+// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/end_lifetime
+router.delete('/end_lifetime', async (req, res) => {
     const podId = req.body.podId
 
     try {
-        const activeCycle = await db.fetchActiveCycle(podId)
-        if (activeCycle !== undefined){
-            const cycletoremove = await db.endCycle(activeCycle.cycle_id,activeCycle.start_date);
-            res.status(200).json( { success: 'Cycle closed successfully' } );
+        const activeLifetime = await dao.fetchActiveLifetime(podId)
+        if (activeLifetime !== undefined){
+            const lifetimetoremove = await dao.endLifetime(activeLifetime.lifetime_id,activeLifetime.start_date);
+            res.status(200).json( { success: 'Lifetime closed successfully' } );
         } else{
-            res.status(401).json( { error: 'Pod has no active Cycles' } );
+            res.status(401).json( { error: 'Pod has no active Lifetimes' } );
         }
     } catch (err) {
         console.log(err)
-        res.status(401).json( { error: 'Failed in closing cycle' } );
+        res.status(401).json( { error: 'Failed in closing lifetime' } );
     }
 });
 
