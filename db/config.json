@@ -1,9 +1,0 @@
-{
-    "server_host": "localhost",
-    "server_port": "8080",
-    "rds_host": "prosca-dbms.cjbwj4j7ak97.us-east-1.rds.amazonaws.com",
-    "rds_username": "roscaCJIES",
-    "rds_password": "c2j0i2e3S$",
-    "rds_port": 3306,
-    "rds_db": "prosca"
-}
