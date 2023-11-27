@@ -128,35 +128,6 @@ const addWithdrawal = async (user_id, withdrawal_amount) => {
     });
 }
 
-/*
-    parameters: deposit_id, new_amt
-    returns: 1 on success, error message on error
-*/
-const updateWithdrawalAmount = async(withdrawal_id, new_amt) => {
-    const connection = openConnection()
-    return new Promise((resolve, reject) => {
-        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id)
-        const query = `
-        UPDATE Pod_Withdrawals
-        SET amount = ?
-        WHERE withdrawal_id = ?
-        `
-        connection.query(query, [new_amt, withdrawal_id], (err, result) => {
-            if (err) {
-                reject(`Error in updateDepositAmount: cannot update amount for deposit. ${err.message}`);
-            } else if (result.affectedRows === 0) {
-                reject(`
-                Error in removeUserFromPod: no rows were modified when updating 
-                withdrawal_id:${withdrawal_id} from Pod_Withdrawals table.
-                `);
-            } else {
-                resolve(result.affectedRows) // should return 1 on success
-            }
-        });
-        // closeConnection(connection)
-    });
-}
-
 /********************************     Lifetimes *********************************** */
 
 /* 
@@ -205,6 +176,5 @@ module.exports = {
     updateDepositAmount,
     getWithdrawal,
     addWithdrawal,
-    updateWithdrawalAmount,
     getUserLifetimesInfo
 };

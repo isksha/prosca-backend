@@ -10,6 +10,12 @@ const PUBLIC_VISIBILITY_STRING = 'public'
 const DEPOSIT_TYPE_STRING = 'deposit'
 const WITHDRAWAL_TYPE_STRING = 'withdrawal'
 
+let RECURRENCE_STRING_TO_DIGIT_MAP = new Map([
+    ['weekly', 7],
+    ['biweekly', 14],
+    // todo : add monthly
+]);
+
 function generateUniqueId() {
     return uuidv4()
 }
@@ -22,6 +28,14 @@ function generateSHA256Hash(valueToHash) {
     return CryptoJS.SHA256(valueToHash).toString(CryptoJS.enc.Hex);
 }
 
+function getDateWithOffset(last_start, recurrenceRate) {
+    let currentDate = last_start;
+
+    // Add x days to the current date
+    currentDate.setDate(currentDate.getDate() + RECURRENCE_STRING_TO_DIGIT_MAP.get(recurrenceRate));
+    return currentDate;
+}
+
 module.exports = {
     DEFAULT_USER_SCORE,
     DEFAULT_WALLET_AMOUNT,
@@ -31,5 +45,6 @@ module.exports = {
     WITHDRAWAL_TYPE_STRING,
     generateUniqueId,
     getDate,
-    generateSHA256Hash
+    generateSHA256Hash,
+    getDateWithOffset
 }

@@ -67,7 +67,21 @@ router.get('/lifetimes/:podId', async (req, res) => {
 
 router.get('/:podId', checkPodExists, async (req, res) => {
     const foundPod = req.foundPod;
-    res.status(200).json(foundPod);
+
+    try {
+        // get number of users in pod
+        const numUsers = await dao.getPodMembers(req.params.podId);
+        foundPod.numUsers = numUsers.length;
+
+        const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
+
+        foundPod.contributionAmt = activeLifetime.contribution_amount
+        foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate)
+
+        res.status(200).json(foundPod);
+    } catch (err) {
+        res.status(401).json({ error: 'Could not get pod' })
+    }
 });
 
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
