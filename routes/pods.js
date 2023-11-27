@@ -77,9 +77,10 @@ router.get('/:podId', checkPodExists, async (req, res) => {
 
         foundPod.contributionAmt = activeLifetime.contribution_amount
         foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate)
-
+        foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
         res.status(200).json(foundPod);
     } catch (err) {
+        console.log(err)
         res.status(401).json({ error: 'Could not get pod' })
     }
 });
