@@ -95,7 +95,7 @@ router.post('/', async (req, res) => {
     try {
         const newPod = await dao.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode, podSize);
         const lifetime = await dao.createLifetime(generatedLifetimeId, generatedPodId, recurrenceRate, contributionAmount)
-        res.status(200).json( generatedPodId );
+        res.status(200).json( { pod_code : podCode } );
     } catch (err) {
         console.log(err)
         res.status(401).json( { error: 'Failed in creating pod' } );
