@@ -31,12 +31,15 @@ router.get('/blockchain/:transactionId', async (req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'userId=165e4426-6cb4-4df9-88ac-091a4be797c3&amt=100' http://localhost:3000/deposits
+// curl -i -X POST -d 'userId=165e4426-6cb4-4df9-88ac-091a4be797c3&podId=2da381d8-528e-43aa-b19f-7fd10726b1c5&amt=100' http://localhost:3000/deposits
 router.post('/', async (req, res) => {
     const userId = req.body.userId;
+    const podId = req.body.podId;
     const depositAmount = req.body.amt;
     try {
         await dao.addDeposit(userId, depositAmount);
+
+        // TODO : add to pod wallet
         res.status(200).json({ success: 'Deposit successfully added' })
     } catch (err) {
         res.status(401).json({ error: 'Failed to add deposit' })
@@ -46,20 +49,6 @@ router.post('/', async (req, res) => {
 });
 
 // ********************************     PUT routes *********************************** //
-
-// used only for deposit amount updates
-// curl -i -X PUT -d 'amt=150' http://localhost:3000/deposits/5fce61ff-c1d0-4b23-9dc7-4146faefc649
-router.put('/:depositId', async (req, res) => {
-    const newAmount = req.body.amt;
-    const depositId = req.params.depositId;
-
-    try {
-        await dao.updateDepositAmount(depositId, newAmount);
-        res.status(200).json({ success: 'Deposit successfully updated' })
-    } catch (err) {
-        res.status(404).json({error: 'Deposit not found'});
-    }
-});
 
 // ********************************  DELETE routes *********************************** //
 

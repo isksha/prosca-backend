@@ -31,12 +31,15 @@ router.get('/blockchain/:transactionId', async (req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'userId=165e4426-6cb4-4df9-88ac-091a4be797c3&amt=100' http://localhost:3000/withdrawals
+// curl -i -X POST -d 'userId=165e4426-6cb4-4df9-88ac-091a4be797c3&podId=2da381d8-528e-43aa-b19f-7fd10726b1c5&amt=100' http://localhost:3000/withdrawals
 router.post('/', async (req, res) => {
     const userId = req.body.userId;
+    const podId = req.body.podId;
     const withdrawalAmount = req.body.amt;
     try {
         await dao.addWithdrawal(userId, withdrawalAmount);
+        // TODO : subtract from pod wallet
+
         res.status(200).json({ success: 'Withdrawal successfully added' })
     } catch (err) {
         res.status(401).json({ error: 'Failed to add withdrawal' })
@@ -46,20 +49,6 @@ router.post('/', async (req, res) => {
 });
 
 // ********************************     PUT routes *********************************** //
-
-// used only for withdrawal amount updates
-// curl -i -X PUT -d 'amt=150' http://localhost:3000/withdrawals/5fce61ff-c1d0-4b23-9dc7-4146faefc649
-router.put('/:withdrawalId', async (req, res) => {
-    const newAmount = req.body.amt;
-    const withdrawalId = req.params.withdrawalId;
-
-    try {
-        await dao.updateWithdrawalAmount(withdrawalId, newAmount);
-        res.status(200).json({ success: 'Withdrawal successfully updated' })
-    } catch (err) {
-        res.status(404).json({error: 'Withdrawal not found'});
-    }
-});
 
 // ********************************  DELETE routes *********************************** //
 
