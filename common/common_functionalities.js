@@ -29,11 +29,18 @@ function generateSHA256Hash(valueToHash) {
 }
 
 function getDateWithOffset(last_start, recurrenceRate) {
-    let currentDate = last_start;
+    let currentDate = new Date(last_start);
 
     // Add x days to the current date
     currentDate.setDate(currentDate.getDate() + RECURRENCE_STRING_TO_DIGIT_MAP.get(recurrenceRate));
     return currentDate;
+}
+
+function getCurrCycle(last_start, recurrenceRate) {
+    let currentDate = getDate();
+    let diffInTime = currentDate.getTime() - last_start.getTime();
+    let diffInDays = diffInTime / (1000 * 3600 * 24);
+    return Math.floor(diffInDays / RECURRENCE_STRING_TO_DIGIT_MAP.get(recurrenceRate)) + 1;
 }
 
 module.exports = {
@@ -46,5 +53,6 @@ module.exports = {
     generateUniqueId,
     getDate,
     generateSHA256Hash,
-    getDateWithOffset
+    getDateWithOffset,
+    getCurrCycle
 }
