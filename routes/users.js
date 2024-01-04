@@ -30,6 +30,27 @@ router.get('/', async (req, res) => {
 
 });
 
+// http://localhost:3000/users/Iskander/Iskanderovic
+router.get('/:firstName/:lastName', async (req, res) => {
+    console.log("got here");
+    const firstName = req.params.firstName? req.params.firstName : "";
+    const lastName = req.params.lastName? req.params.lastName : "";
+    try {
+        const foundUsers = await dao.getUsersByName(firstName, lastName);
+        if(foundUsers){
+            res.status(200).json(foundUsers);
+        }else{
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+            res.status(404).json({error: `Error : ${err}` });
+    }
+    
+    
+
+});
+
 // ELDA: unfinished
 router.get('/:userId', checkUserExists, async (req, res) => {
     const foundUser = req.foundUser;
@@ -76,6 +97,7 @@ router.get('/check_user_eligibility/:userId/:podId', checkUserExists, async (req
     const userId = req.params.userId;
     // TODO: check pod eligibility
 });
+
 
 // ********************************    POST routes *********************************** //
 
@@ -150,10 +172,10 @@ router.post('/withdraw', async (req, res) => {
     const foundUser = await dao.getUserById(userId);
     if (foundUser) {
         // TODO: replace with DB calls, possibly other route calls
-
+        
         res.status(200).json(foundUser);
     } else {
-        res.status(401).json({ error: 'Failed to withdraw' });
+        res.status(401).json({ error: 'User does not exist' });
     }
 });
 
@@ -187,33 +209,23 @@ router.post('/withdraw_vote', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk&user2=boon' http://localhost:3000/users/create_friendship
-router.post('/create_friendship', async (req, res) => {
+// curl -i -X POST -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&user2Id=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/request_friendship
+router.post('/request_friendship', async (req, res) => {
     const userId = req.body.userId
-    const user2 = req.body.user2
+    const user2Id = req.body.user2Id
+    const startDatetime = common.getDate()
 
     const foundUser = await dao.getUserById(userId);
     if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
+        try {
+            await dao.postFriendRequest(userId, user2Id, "pending", startDatetime)
+            res.status(200).json({ success: 'Request sent successfully' })
+        } catch (err) {
+            console.log(err)
+            res.status(401).json({ error: 'Failed to request friendship!' })
+        }
     } else {
-        res.status(401).json({ error: 'Failed to make friends' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&user2=boon' http://localhost:3000/users/end_friendship
-router.post('/end_friendship', async (req, res) => {
-    const userId = req.body.userId
-    const user2 = req.body.user2
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to end friendship' });
+        res.status(401).json({ error: 'Failed to request friendship!' });
     }
 });
 
@@ -263,6 +275,31 @@ router.put('/:userId',  async(req, res) => {
     }
 });
 
+// ********************************     PATCH routes *********************************** //
+
+// curl -i -X PATCH -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&user2Id=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/accept_friendship
+// curl -H 'Content-Type: application/json' -d '{"userId": "9bf6574c-6e97-4f05-b0b2-0c06b485b733", "user2Id": "7990f1ed-b1a4-4985-95bf-75ef645b51cf"}' -X PATCH http://localhost:3000/users/accept_friendship
+     
+router.patch('/accept_friendship',  async(req, res) => {
+    const userId = req.body.userId;
+    const user2Id = req.body.user2Id;
+    console.log("userId:")
+    console.log(req.body);
+
+    const foundUser = await dao.getUserById(userId);
+    if (foundUser) {
+       
+        try {
+            await dao.acceptFriendRequest(userId, user2Id, "accepted")
+            res.status(200).json({ success: 'Friendship successfully added' })
+        } catch (err) {
+            console.log(err)
+            res.status(401).json({ error: 'Failed to add accept friendship' })
+        }
+    } else {
+        res.status(404).json({ error: 'User not found' });
+    }
+});
 // ********************************  DELETE routes *********************************** //
 
 // curl -i -X DELETE http://localhost:3000/users/isk
@@ -298,6 +335,27 @@ router.delete('/leave_pod/', async (req, res) => {
         console.log(err);
         res.status(401).json({ error: 'Failed to remove user from pod' });
     }
+})
+
+// curl -i -X DELETE -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&friendId=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/end_friendship
+router.delete('/end_friendship/', async (req, res) => {
+    const userId = req.body.userId;
+    const friendId = req.body.friendId;
+
+    const foundUser = await dao.getUserById(userId);
+    if(foundUser){
+        try { 
+            friendshipEnd = await dao.endFriendship(userId, friendId)
+            res.status(200).json({ success: 'Friendship/requested successfully terminated' });
+        } catch (err) {
+            console.log(err);
+            res.status(401).json({ error: `Failed to end friendship/request between users ${userId} and ${friendId}` });
+        }
+
+    } else{
+        res.status(401).json({ error: `User ${userId} does not exist !` });
+    }
+
 })
 
 module.exports = router;
