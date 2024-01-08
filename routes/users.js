@@ -1,9 +1,9 @@
 const express = require('express');
 
 const router = express.Router();
-const common = require('../common/common_functionalities');
-
+const common = require('../common/commonFunctionalities');
 const dao = require('../db/dataAccessor');
+const stripe = require('../payments/stripe');
 
 // *****************************  Internal helpers *********************************** //
 
@@ -104,10 +104,17 @@ router.post('/', async (req, res) => {
 
     try {
         await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
-        res.status(200).json({ success: 'User successfully added' })
     } catch (err) {
-        console.log(err)
-        res.status(401).json({ error: 'Failed to add user' })
+        return res.status(401).json({ error: 'Failed to add user' })
+    }
+
+    try {
+        const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
+        const acct_link = await stripe.navigateToStripeAuth(account)
+        res.redirect(acct_link)
+    } catch (err) {
+        // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
+        res.status(401).json({ error: 'Failed to add user: Stripe API error' })
     }
 });
 
@@ -231,18 +238,18 @@ router.post('/join_pod', async (req, res) => {
             return res.status(401).json({ error: 'Invalid pod invite pod' });
         }
     } catch (err) {
-        res.status(401).json({ error: 'Failed to add user to pod' });
+        res.status(401).json({ error: 'Failed to add user to pod: wrong code' });
     }
 
     try {
-        const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined, podCode)
-        console.log(addedUserToPod)
+        const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined)
         if (addedUserToPod === 0) {
             res.status(401).json({ error: 'User already in pod' });
         } else {
             res.status(200).json({ success: 'User successfully added to pod' });
         }
     } catch (err) {
+        console.log(err)
         res.status(401).json({ error: 'Failed to add user to pod' });
     }
 })
@@ -281,7 +288,6 @@ router.delete('/delete_user/:userId', async(req, res) => {
 
 // curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/leave_pod
 router.delete('/leave_pod/', async (req, res) => {
-    console.log("ere")
     const podId = req.body.podId;
     const userId = req.body.userId;
 
@@ -301,3 +307,10 @@ router.delete('/leave_pod/', async (req, res) => {
 })
 
 module.exports = router;
+
+// demo function - i will erase it soon
+router.get('/v1/stripe/', async (req, res) => {
+    const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 10)
+    const payout = await stripe.payoutToStripeAccount('acct_1OUqloFoZunolgPh', 10)
+    console.log(charge, "BREAK\n", payout)
+})

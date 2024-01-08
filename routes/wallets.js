@@ -1,7 +1,7 @@
 const express = require('express');
 
 const router = express.Router();
-const common = require('../common/common_functionalities');
+const common = require('../common/commonFunctionalities');
 const dao = require('../db/dataAccessor');
 
 // ********************************     GET routes *********************************** //
