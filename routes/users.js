@@ -47,8 +47,6 @@ router.get('/:firstName/:lastName', async (req, res) => {
             res.status(404).json({error: `Error : ${err}` });
     }
     
-    
-
 });
 
 // ELDA: unfinished
@@ -229,7 +227,7 @@ router.post('/request_friendship', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=c24203d3-1fce-4dc9-9aac-0c42b4499722&podCode=53081' http://localhost:3000/users/join_pod
+// curl -i -X POST -d 'podId=864a15ac-dc69-4d15-91ea-60be2688f1ef&userId=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&podCode=36270' http://localhost:3000/users/join_pod
 router.post('/join_pod', async (req, res) => {
     const podId = req.body.podId
     const userId = req.body.userId
@@ -240,10 +238,10 @@ router.post('/join_pod', async (req, res) => {
     try {
         const foundPod = await dao.getPod(podId);
         if (foundPod.visibility === common.PRIVATE_VISIBILITY_STRING && foundPod.pod_code !== podCode) {
-            return res.status(401).json({ error: 'Invalid pod invite pod' });
+            return res.status(401).json({ error: 'Invalid pod invite code' });
         }
     } catch (err) {
-        res.status(401).json({ error: 'Failed to add user to pod' });
+        res.status(401).json({ error: 'Failed to verify invite code' });
     }
 
     try {
@@ -255,7 +253,7 @@ router.post('/join_pod', async (req, res) => {
             res.status(200).json({ success: 'User successfully added to pod' });
         }
     } catch (err) {
-        res.status(401).json({ error: 'Failed to add user to pod' });
+        res.status(401).json({ error: 'Failed to add user to pod: ' + err });
     }
 })
 
