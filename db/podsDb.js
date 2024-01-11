@@ -90,6 +90,37 @@ const getPod = async (pod_id) => {
   });
 };
 
+/* 
+  parameters: pod_name
+  returns: row in Pods table on success, error message on error
+*/
+const getPodsByName = async (pod_name) => {
+  const connection = openConnection()
+  return new Promise((resolve, reject) => {
+    // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+    const query = `
+    WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size FROM Pods
+    JOIN Pod_Lifetimes PL ON Pods.pod_id = PL.pod_id
+    WHERE pod_name = ? AND PL.end_date IS NULL)
+    SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size FROM pods_lifetimes
+    JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
+    GROUP BY pods_lifetimes.pod_id;
+    `;
+    
+    connection.query(query, [pod_name], (err, data) => {
+      if (err) {
+        reject(`Error in getPodsByName: cannot get pod from Pods table. ${err.message}`);
+      } else if (data.length === 0) {
+        reject(`Error in getPodsByName: no rows in the Pods table matched pod_name: ${pod_name}.`);
+      } else {
+        resolve(data)
+      }
+    });
+    // closeConnection(connection)
+  });
+};
+
+
 /*
   parameters: pod_id, name, visibility, creator_id, creation_date, pod_code
   returns: 1 on success, error message on error
@@ -120,5 +151,6 @@ module.exports = {
   getAllPods,
   getPod,
   addPod,
+  getPodsByName,
   explorePublicPods
 };
