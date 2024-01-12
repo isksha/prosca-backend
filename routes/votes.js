@@ -2,7 +2,7 @@ const express = require('express');
 
 const router = express.Router();
 const dao = require('../db/dataAccessor');
-const common = require('../common/common_functionalities');
+const common = require('../common/commonFunctionalities');
 
 // ********************************     GET routes *********************************** //
 router.get('/:voteId', async (req, res) => {

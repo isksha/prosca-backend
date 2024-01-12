@@ -1,5 +1,5 @@
 const {openConnection, closeConnection} = require("./dbConnection");
-const common = require('../common/common_functionalities');
+const common = require('../common/commonFunctionalities');
 
 /********************************     Deposits *********************************** */
 

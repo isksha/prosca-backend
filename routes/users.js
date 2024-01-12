@@ -1,9 +1,9 @@
 const express = require('express');
 
 const router = express.Router();
-const common = require('../common/common_functionalities');
-
+const common = require('../common/commonFunctionalities');
 const dao = require('../db/dataAccessor');
+const stripe = require('../payments/stripe');
 
 // *****************************  Internal helpers *********************************** //
 
@@ -124,10 +124,17 @@ router.post('/', async (req, res) => {
 
     try {
         await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
-        res.status(200).json({ success: 'User successfully added' })
     } catch (err) {
-        console.log(err)
-        res.status(401).json({ error: 'Failed to add user' })
+        return res.status(401).json({ error: 'Failed to add user' })
+    }
+
+    try {
+        const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
+        const acct_link = await stripe.navigateToStripeAuth(account)
+        res.redirect(acct_link)
+    } catch (err) {
+        // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
+        res.status(401).json({ error: 'Failed to add user: Stripe API error' })
     }
 });
 
@@ -245,8 +252,7 @@ router.post('/join_pod', async (req, res) => {
     }
 
     try {
-        const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined, podCode)
-        console.log(addedUserToPod)
+        const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined)
         if (addedUserToPod === 0) {
             res.status(401).json({ error: 'User already in pod' });
         } else {
@@ -256,6 +262,24 @@ router.post('/join_pod', async (req, res) => {
         res.status(401).json({ error: 'Failed to add user to pod: ' + err });
     }
 })
+
+// manually issue payout to user's bank account
+// curl -i -X POST -d 'userId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=c24203d3-1fce-4dc9-9aac-0c42b4499722&payoutAmount=10' http://localhost:3000/users/issue_stripe_payout
+router.post('/issue_stripe_payout', async (req, res) => {
+    const userId = req.body.userId;
+    const payoutAmount = req.body.payoutAmount; // in USD
+
+    try {
+        const stripeId = await dao.getStripeIdFromUserId(userId);
+        const payout = await stripe.payoutToBankAccount(stripeId, payoutAmount)
+
+        // TODO: store payout in internal DB ??
+
+        res.status(200).json({ success: 'Payout successful' });
+    } catch (e) {
+        res.status(401).json({ error: 'Failed to issue payout' });
+    }
+});
 
 // ********************************     PUT routes *********************************** //
 
@@ -316,7 +340,6 @@ router.delete('/delete_user/:userId', async(req, res) => {
 
 // curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&userId=02ef79a9-c888-4db4-bcc1-319f1e61fe9c' http://localhost:3000/users/leave_pod
 router.delete('/leave_pod/', async (req, res) => {
-    console.log("ere")
     const podId = req.body.podId;
     const userId = req.body.userId;
 
@@ -357,3 +380,12 @@ router.delete('/end_friendship/', async (req, res) => {
 })
 
 module.exports = router;
+
+// demo function - i will erase it soon
+router.get('/v1/stripe/', async (req, res) => {
+    // const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 10)
+    // const account = await stripe.createStripeConnectedAccount("h", "iskanderr@gmail.com", "Jillian", "Tobius");
+    // const acct_link = await stripe.navigateToStripeAuth(account)
+    // res.redirect(acct_link)
+    const payout = await stripe.payoutToBankAccount('acct_1OUqloFoZunolgPh', 10)
+})

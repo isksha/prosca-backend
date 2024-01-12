@@ -152,6 +152,31 @@ const endLifetime = async(lifetime_id) => {
       // closeConnection(connection)
     });
 }
+
+/*
+    parameters: lifetime_id
+    returns: pod_id on success, error message on error
+*/
+const getLifetime = async(lifetime_id) => {
+    const connection = openConnection()
+    return new Promise((resolve, reject) => {
+        // Pod_Lifetimes(lifetime_id, start_date, pod_id, end_date, recurrence_rate, contribution_amount)
+        const query = `
+        SELECT * FROM Pod_Lifetimes
+        WHERE lifetime_id = ?
+        `
+        connection.query(query, [lifetime_id], (err, data) => {
+        if (err) {
+            reject(`Error in fetchPodFromLifetime: cannot fetch pod from lifetime_id: ${lifetime_id} from Pod_Lifetimes Table. ${err.message}`);
+        } else if (data.length === 0) {
+            reject(`Error in fetchPodFromLifetime: no rows in Pod_Lifetimes table matched lifetime_id: ${lifetime_id}`);
+        } else {
+            resolve(data[0])
+        }
+        });
+        // closeConnection(connection)
+    });
+}
   
 /*
     parameters: pod_id
@@ -167,5 +192,6 @@ module.exports = {
     endLifetime,
     getLifetimeStatement,
     fetchAllPodLifetimes,
-    fetchAllLifetimes
+    fetchAllLifetimes,
+    getLifetime
 };
