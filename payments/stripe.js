@@ -24,7 +24,14 @@ const createStripeConnectedAccount = async (user_id, email, fname, lname) => {
             name : `${fname} ${lname}`,
         },
         tos_acceptance : {
-            service_agreement : 'full',
+            service_agreement: 'full',
+        },
+        settings : {
+            payouts : {
+                schedule : {
+                    interval : 'manual',
+                },
+            },
         }
     });
 
@@ -52,18 +59,18 @@ const chargeStripeAccount = async (account_id, amount) => {
         {
             amount: amountInDollars,
             currency: 'usd',
-            destination: process.env.STRIPE_PLATFORM_ID, // sender
+            destination: process.env.STRIPE_PLATFORM_ID, // platform
         },
         {
-            stripeAccount: account_id, // platform
+            stripeAccount: account_id, // sender
         }
     );
 
     return transfer;
 }
 
-// payout to a pod member
-const payoutToStripeAccount = async (account_id, amount) => {
+// transfer funds to a stripe connected account
+const payStripeAccount = async (account_id, amount) => {
     // in live mode, we automatically payout to the pod member's bank account
     const amountInDollars = amount * 100;
 
@@ -76,9 +83,25 @@ const payoutToStripeAccount = async (account_id, amount) => {
     return transfer;
 }
 
+// issue payout to connected account's bank
+const payoutToBankAccount = async (account_id, amount) => {
+    // in live mode, we automatically payout to the pod member's bank account
+    const amountInDollars = amount * 100;
+
+    const payout = await stripe.payouts.create({
+        amount: amountInDollars,
+        currency: "usd",
+    }, {
+        stripeAccount: account_id,
+    });
+
+    return payout;
+}
+
 module.exports = {
     createStripeConnectedAccount,
     navigateToStripeAuth,
     chargeStripeAccount,
-    payoutToStripeAccount,
+    payStripeAccount,
+    payoutToBankAccount
 }

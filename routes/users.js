@@ -254,6 +254,24 @@ router.post('/join_pod', async (req, res) => {
     }
 })
 
+// manually issue payout to user's bank account
+// curl -i -X POST -d 'userId=1cde8141-a015-4bc3-98f6-b383f2540742&userId=c24203d3-1fce-4dc9-9aac-0c42b4499722&payoutAmount=10' http://localhost:3000/users/issue_stripe_payout
+router.post('/issue_stripe_payout', async (req, res) => {
+    const userId = req.body.userId;
+    const payoutAmount = req.body.payoutAmount; // in USD
+
+    try {
+        const stripeId = await dao.getStripeIdFromUserId(userId);
+        const payout = await stripe.payoutToBankAccount(stripeId, payoutAmount)
+
+        // TODO: store payout in internal DB ??
+
+        res.status(200).json({ success: 'Payout successful' });
+    } catch (e) {
+        res.status(401).json({ error: 'Failed to issue payout' });
+    }
+});
+
 // ********************************     PUT routes *********************************** //
 
 // curl -i -X PUT http://localhost:3000/users/isk
@@ -310,7 +328,9 @@ module.exports = router;
 
 // demo function - i will erase it soon
 router.get('/v1/stripe/', async (req, res) => {
-    const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 10)
-    const payout = await stripe.payoutToStripeAccount('acct_1OUqloFoZunolgPh', 10)
-    console.log(charge, "BREAK\n", payout)
+    // const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 10)
+    // const account = await stripe.createStripeConnectedAccount("h", "iskanderr@gmail.com", "Jillian", "Tobius");
+    // const acct_link = await stripe.navigateToStripeAuth(account)
+    // res.redirect(acct_link)
+    const payout = await stripe.payoutToBankAccount('acct_1OUqloFoZunolgPh', 10)
 })
