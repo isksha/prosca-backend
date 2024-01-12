@@ -1,30 +1,31 @@
 const {openConnection, closeConnection} = require("./dbConnection");
 
 /* 
-    parameters: pod_id
-    returns: list of current users in pod with pod_id on success, error message on error
+  parameters: pod_id
+  returns: row in Pods table on success, error message on error
 */
-const getPodMembers = async(pod_id) => {
+const getPodMembers = async (pod_id) => {
     const connection = openConnection()
     return new Promise((resolve, reject) => {
-        // User_Pods(user_id, pod_id, date_joined, date_left)
-        const query = `
-        SELECT * 
-        FROM User_Pods 
-        WHERE pod_id = ? AND date_left IS NULL
-        `
-        connection.query(query, [pod_id], (err, data) => {
-            if (err) {
-                reject(`Error in getPodMembers: cannot get pod members from User_Pods table. ${err.message}`);
-            } else if (data.length === 0) {
-                reject(`Error in getPodMembers: no rows in the User_Pods table matched pod_id: ${pod_id}.`);
-            } else {
-                resolve(data)
-            }
-        });
-        // closeConnection(connection)
+      // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+      const query = `
+      SELECT Users.user_id, first_name, last_name, score FROM User_Pods
+      JOIN Users ON Users.user_id = User_Pods.user_id
+      WHERE pod_id = ? AND date_left IS NULL
+      `;
+      
+      connection.query(query, [pod_id], (err, data) => {
+        if (err) {
+          reject(`Error in getPodMembers: cannot get members from User_Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getPodMembers: no rows in the User_Pods table matched pod_id: ${pod_id}.`);
+        } else {
+          resolve(data)
+        }
+      });
+      // closeConnection(connection)
     });
-}
+  };
 
 /* 
     parameters: user_id, pod_id, date_joined
@@ -43,7 +44,7 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
             if (err) {
                 reject(`Error in addUserToPod: cannot add user to User_Pods table. ${err.message}`);
             } else if (result.affectedRows === 0) {
-                reject(`Error in addUserToPod: No rows were modified when adding user to User_Pods table. User already in Pod`);
+                reject(`Error in addUserToPod: No rows were modified when adding user to User_Pods table.`);
             } else {
                 resolve(result.affectedRows) // should return 1 on success
             }

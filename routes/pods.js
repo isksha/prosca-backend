@@ -86,6 +86,42 @@ router.get('/:podId', checkPodExists, async (req, res) => {
     }
 });
 
+// http://localhost:3000/pods/search/Finance students Pod
+router.get('/search/:podName', async (req, res) => {
+    const podName = req.params.podName? req.params.podName : "";
+    
+    try {
+        const foundPods = await dao.getPodsByName(podName);
+        if(foundPods){
+            res.status(200).json(foundPods);
+        }else{
+            res.status(404).json({error: 'No pods found with given name' });
+        }
+            
+    } catch (err) {
+            res.status(404).json({error: `Error : ${err}` });
+    }
+    
+});
+
+// http://localhost:3000/pods/get_members/223ebd0e-5691-4503-a58a-e161cad6362d
+router.get('/get_members/:podID', async (req, res) => {
+    const podID = req.params.podID;
+    
+    try {
+        const foundMembers = await dao.getPodMembers(podID);
+        if(foundMembers){
+            res.status(200).json(foundMembers);
+        }else{
+            res.status(404).json({error: 'No members present in pod' });
+        }
+            
+    } catch (err) {
+            res.status(404).json({error: `Error : ${err}` });
+    }
+    
+});
+
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
     const foundPod = req.foundPod;
     res.status(200).json(foundPod);
@@ -122,7 +158,7 @@ router.post('/', async (req, res) => {
 a lifetime in a pod that has already been created (perhaps 
 after they finished their initial lifetime and dont have 
 an active lifetime) */
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd&recur_rate=weekly&contr_amount=250' http://localhost:3000/pods/create_lifetime
+// curl -i -X POST -d 'podId=223ebd0e-5691-4503-a58a-e161cad6362d&recur_rate=monthly&contr_amount=100' http://localhost:3000/pods/create_lifetime
 router.post('/create_lifetime', async (req, res) => {
     const podId = req.body.podId
     const generatedLifetimeId = common.generateUniqueId();
