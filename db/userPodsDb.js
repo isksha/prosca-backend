@@ -38,7 +38,8 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
         // Users already in a pod are not re-added, can be re-added if they left the pod
         const query = `
         INSERT INTO User_Pods (user_id, pod_id, date_joined)
-        VALUES (?, ?, ?)
+        SELECT ?, ?, ?
+        WHERE NOT EXISTS (SELECT * FROM User_Pods WHERE user_id = ? AND pod_id = ? AND date_left IS NULL);
         `
         connection.query(query, [user_id, pod_id, date_joined, user_id, pod_id], (err, result) => {
             if (err) {
