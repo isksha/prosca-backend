@@ -30,13 +30,14 @@ router.get('/', async (req, res) => {
 
 });
 
-// http://localhost:3000/users/Iskander/Iskanderovic
-router.get('/:firstName/:lastName', async (req, res) => {
-    console.log("got here");
-    const firstName = req.params.firstName? req.params.firstName : "";
-    const lastName = req.params.lastName? req.params.lastName : "";
+// will search by first name, last name or both
+// http://localhost:3000/users/Iskander
+// http://localhost:3000/users/Iskanderovic
+// http://localhost:3000/users/Iskander Iskanderovic
+router.get('/:userName', async (req, res) => {
+    const userName = req.params.userName? req.params.userName : "";
     try {
-        const foundUsers = await dao.getUsersByName(firstName, lastName);
+        const foundUsers = await dao.getUsersByName(userName);
         if(foundUsers){
             res.status(200).json(foundUsers);
         }else{

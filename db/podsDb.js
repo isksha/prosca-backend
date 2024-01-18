@@ -106,7 +106,7 @@ const getPodsByName = async (pod_name) => {
     JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
     GROUP BY pods_lifetimes.pod_id;
     `;
-    pod_name_new = '%' + pod_name + '%';
+    const pod_name_new = '%' + pod_name + '%';
     connection.query(query, [pod_name_new], (err, data) => {
       if (err) {
         reject(`Error in getPodsByName: cannot get pod from Pods table. ${err.message}`);
