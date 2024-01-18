@@ -86,6 +86,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
     }
 });
 
+// will search by pod name or any key word in the pod name
 // http://localhost:3000/pods/search/Finance students Pod
 router.get('/search/:podName', async (req, res) => {
     const podName = req.params.podName? req.params.podName : "";

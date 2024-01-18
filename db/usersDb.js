@@ -212,7 +212,7 @@ const getAllUsers = async () => {
   parameters: none
   returns: users with given name on success, error message on error/when no pods exist
 */
-const getUsersByName = async (first_name, last_name) => {
+const getUsersByName = async (user_name) => {
   const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
@@ -220,12 +220,11 @@ const getUsersByName = async (first_name, last_name) => {
       user_password, date_of_birth, score, national_id, country, wallet_amount)
     */
       const query = `
-      SELECT * 
-      FROM Users 
-      WHERE first_name = ? AND last_name = ?
+      WITH users_nw AS (SELECT user_id, CONCAT(first_name, ' ', last_name) AS user_name, phone, email_address, user_password, date_of_birth,score,national_id,country,wallet_amount FROM Users )
+      SELECT * FROM users_nw WHERE user_name LIKE ?;
     `;
-
-    connection.query(query, [first_name, last_name], (err, data) => {
+    const username_new = '%' + user_name + '%';
+    connection.query(query, [username_new], (err, data) => {
       if (err) {
         console.log("error")
         reject(`Error in getUsersBy name: cannot get user from Users table. ${err.message}`);
