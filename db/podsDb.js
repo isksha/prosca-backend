@@ -101,13 +101,13 @@ const getPodsByName = async (pod_name) => {
     const query = `
     WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size FROM Pods
     JOIN Pod_Lifetimes PL ON Pods.pod_id = PL.pod_id
-    WHERE pod_name = ? AND PL.end_date IS NULL)
+    WHERE pod_name LIKE ? AND PL.end_date IS NULL)
     SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size FROM pods_lifetimes
     JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
     GROUP BY pods_lifetimes.pod_id;
     `;
-    
-    connection.query(query, [pod_name], (err, data) => {
+    pod_name_new = '%' + pod_name + '%';
+    connection.query(query, [pod_name_new], (err, data) => {
       if (err) {
         reject(`Error in getPodsByName: cannot get pod from Pods table. ${err.message}`);
       } else if (data.length === 0) {
