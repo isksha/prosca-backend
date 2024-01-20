@@ -270,6 +270,12 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
                 recurrenceRate,
                 potOrderArray[i],
             );
+
+            // also store the date of the payout for each user in internal db
+            // note: not most efficient bc we get stripe id and date in helper above
+            const stripe_id =  await dao.getStripeIdFromUserId(podMemberIds[i]);
+            const payout_date = common.getDateWithOffset(startDate, recurrenceRate, potOrderArray[i]);
+            await dao.addPayoutDate(podMemberIds[i], stripe_id, payout_date);
         }
 
         // for each user in pod, schedule stripe deposits
@@ -306,25 +312,30 @@ router.get('/v1/start_lifetime',  async(req, res) => {
 
         const numPodMembers = podMemberIds.length
 
-        // for each user in pod, schedule a stripe payout
+        // for each user in pod, schedule a stripe payout and store in db
         for (let i = 0; i < podMemberIds.length; i++) {
-            await paymentScheduling.scheduleStripePayout(
-                podMemberIds[i],
-                numPodMembers * contributionAmount, // winner gets whole pot
-                startDate,
-                recurrenceRate,
-                potOrderArray[i],
-            );
-        }
+            // await paymentScheduling.scheduleStripePayout(
+            //     podMemberIds[i],
+            //     numPodMembers * contributionAmount, // winner gets whole pot
+            //     startDate,
+            //     recurrenceRate,
+            //     potOrderArray[i],
+            // );
 
-        // for each user in pod, schedule stripe deposits
-        for (let i = 0; i < podMemberIds.length; i++) {
-            await paymentScheduling.scheduleStripeCharges(
-                podMemberIds[i],
-                contributionAmount,
-                depositDatesArray[i],
-            );
+            // note: not most efficient bc we get stripe id and date in helper above
+            const stripe_id =  await dao.getStripeIdFromUserId(podMemberIds[i]);
+            const payout_date = common.getDateWithOffset(startDate, recurrenceRate, potOrderArray[i]);
+            await dao.addPayoutDate(podMemberIds[i], stripe_id, payout_date);
         }
+        //
+        // // for each user in pod, schedule stripe deposits
+        // for (let i = 0; i < podMemberIds.length; i++) {
+        //     await paymentScheduling.scheduleStripeCharges(
+        //         podMemberIds[i],
+        //         contributionAmount,
+        //         depositDatesArray[i],
+        //     );
+        // }
 
         res.status(200).json( { success: 'Started lifetime successfully' } );
     } catch (err) {

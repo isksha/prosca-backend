@@ -13,7 +13,7 @@ const dao = require('../db/dataAccessor');
  */
 const scheduleStripePayout = async (userId, depositAmount, startDate, recurrenceRate, orderNum) => {
     const stripeId = 'payout_id' // await dao.getStripeIdFromUserId(userId);
-    const payoutDate = common.shiftDateByXSeconds(new Date(), 4) // common.getDateWithOffset(startDate, recurrenceRate, orderNum);
+    const payoutDate = common.getDateWithOffset(startDate, recurrenceRate, orderNum); // common.shiftDateByXSeconds(new Date(), 4)
 
     schedule.scheduleJob(payoutDate, async () => {
         try {
