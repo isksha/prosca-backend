@@ -30,10 +30,12 @@ router.get('/', async (req, res) => {
 
 });
 
-// http://localhost:3000/users/Iskander/Iskanderovic
-router.get('/:firstName/:lastName', async (req, res) => {
-    const firstName = req.params.firstName? req.params.firstName : "";
-    const lastName = req.params.lastName? req.params.lastName : "";
+// will search by first name, last name or both
+// http://localhost:3000/users/Iskander
+// http://localhost:3000/users/Iskanderovic
+// http://localhost:3000/users/Iskander Iskanderovic
+router.get('/:userName', async (req, res) => {
+    const userName = req.params.userName? req.params.userName : "";
     try {
         const foundUsers = await dao.getUsersByName(userName);
         if(foundUsers){
@@ -48,13 +50,11 @@ router.get('/:firstName/:lastName', async (req, res) => {
     
 });
 
-// http://localhost:3000/users/suggest_friends/fname/lname
-router.get('/suggest_friends/:firstName/:lastName', checkUserExists,async (req, res) => {
-    // TODO: suggest friends after searching using first and last name (strict match?)
-    const firstName = req.params.firstName? req.params.firstName : "";
-    const lastName = req.params.lastName? req.params.lastName : "";
+// http://localhost:3000/users/suggest_friends/username
+router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
+    const userName = req.params.userName? req.params.userName : "";
     try {
-        const foundUsers = await dao.getUsersByName(firstName, lastName);
+        const foundUsers = await dao.getUsersByName(userName);
         if (foundUsers) {
             const foundUsersLimitedInfo = foundUsers.map(user => {
                 return {
