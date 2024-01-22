@@ -18,5 +18,5 @@ module.exports = {
     ...votesDb,
     ...walletsDb,
     ...userPayoutDatesDb,
-    ...userPodsDbFriendshipsDb
+    ...userFriendshipsDb
 }
