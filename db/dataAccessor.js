@@ -6,6 +6,7 @@ const usersDb = require('./usersDb')
 const usersStripeDb = require('./usersStripeDb')
 const votesDb = require('./votesDb')
 const walletsDb = require('./walletsDb')
+const userFriendshipsDb = require('./userFriendshipsDb')
 const userPayoutDatesDb = require('./userPayoutDatesDb')
 
 module.exports = {
@@ -18,5 +19,5 @@ module.exports = {
     ...votesDb,
     ...walletsDb,
     ...userPayoutDatesDb,
-    ...userFriendshipsDb
+    ...userFriendshipsDb,
 }
