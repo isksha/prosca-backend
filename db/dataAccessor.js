@@ -15,5 +15,6 @@ module.exports = {
     ...usersStripeDb,
     ...usersDb,
     ...votesDb,
-    ...walletsDb
+    ...walletsDb,
+    ...userPodsDbFriendshipsDb,
 }

@@ -1,0 +1,124 @@
+const {dbConnection} = require("./dbConnection");
+const common = require('../common/commonFunctionalities');
+
+/* 
+  parameters: user_id
+  returns: row in User_Friendships table on success, error message on error
+*/
+const getPendingFriendshipRequests = async (user_id) => {
+    return new Promise((resolve, reject) => {
+      /*
+        User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
+      */
+      const query = `
+      SELECT * 
+      FROM User_Friendships 
+      WHERE user_id = ? AND status = pending
+      `;
+      dbConnection.getConnection((err, connection) => {
+        connection.query(query, [user_id], (err, data) => {
+          if (err) {
+            console.log("error")
+            reject(`Error in getPendingFriendshipRequests: cannot get user from User_Friendships table. ${err.message}`);
+          } else if (data.length === 0) {
+            console.log("user doesn't exist or doesn't have any pending requests")
+            resolve(undefined)
+          } else {
+            console.log("success")
+            resolve(data)
+          }
+        });
+      });
+    });
+};
+
+/*
+  parameters: user_id, friend_id, status
+  returns: 1 on success, error message on error
+*/
+const postFriendRequest= async (user_id, friend_id, status, start_datetime) => {
+    return new Promise((resolve, reject) => {
+      /*
+        User_Friendships (user_id, friend_id, status, start_datetime, end_datetime)
+      */
+  
+      const query = `
+      INSERT INTO User_Friendships (user_id, friend_id, status, start_datetime) 
+      VALUES (?, ?, ?, ?)
+      `
+      dbConnection.getConnection((err, connection) => {
+        connection.query(query, [user_id, friend_id, status, start_datetime], (err, result) => {
+          if (err) {
+            reject(`Error in postFriendRequest: cannot add friend request to User_Friendship table ${err.message}`);
+          } else if (result.affectedRows === 0) {
+            reject(`Error in addUser: no rows were modified when posting friend request to User_Friendship table.`);
+          } else {
+            resolve(result.affectedRows) // should return 1 on success
+          }
+        });
+      });
+    });
+}
+  
+/* 
+  parameters: user_id, friend_id, status
+  returns: 1 on success, error message on error
+*/
+const acceptFriendRequest = async(user_id, friend_id, status) => {
+    return new Promise((resolve, reject) => {
+      const query = `
+      UPDATE User_Friendships
+      SET start_datetime = NOW(), status = ?
+      WHERE user_id = ? AND friend_id = ? AND end_datetime is NULL
+      `
+      dbConnection.getConnection((err, connection) => {
+        connection.query(query, [status, user_id, friend_id], (err, result) => {
+          if (err) {
+              reject(`Error in acceptFriendRequest: ${err.message}`);
+          } else if (result.affectedRows === 0) {
+              reject(`
+              Error in acceptFriendRequest: no rows were modified when accepting request from 
+              user_id:${user_id}, to user_id:${friend_id} from User_Friendship table.
+              `);
+          } else {
+              resolve(result.affectedRows) // should return 1 on success
+          }
+        });
+      }); 
+    });
+}
+  
+/* 
+  parameters: user_id, friend_id, status
+  returns: 1 on success, error message on error
+*/
+const endFriendship = async(user_id, friend_id) => {
+    return new Promise((resolve, reject) => {
+      const query = `
+      UPDATE User_Friendships
+      SET end_datetime = NOW()
+      WHERE user_id = ? AND friend_id = ? AND end_datetime is NULL
+      `
+      dbConnection.getConnection((err, connection) => {
+        connection.query(query, [user_id, friend_id], (err, result) => {
+          if (err) {
+              reject(`Error in endFriendship: ${err.message}`);
+          } else if (result.affectedRows === 0) {
+              reject(`
+              Error in endFriendship: no rows were modified when ending friendship between 
+              user_id:${user_id} and user_id:${friend_id} from User_Friendship table.
+              `);
+          } else {
+              resolve(result.affectedRows) // should return 1 on success
+          }
+        });
+      });
+    });
+}
+
+module.exports = {
+  getPendingFriendshipRequests,
+  postFriendRequest,
+  acceptFriendRequest,
+  endFriendship
+};

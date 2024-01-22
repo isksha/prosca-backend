@@ -1,4 +1,4 @@
-const {openConnection, closeConnection} = require("./dbConnection");
+const {dbConnection} = require("./dbConnection");
 const common = require('../common/commonFunctionalities');
 
 /* 
@@ -6,7 +6,6 @@ const common = require('../common/commonFunctionalities');
   returns: row in Users table on success, error message on error
 */
 const getUserById = async (user_id) => {
-  const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
       Users (user_id, first_name, last_name, phone, email_address, 
@@ -17,17 +16,17 @@ const getUserById = async (user_id) => {
       FROM Users 
       WHERE user_id = ?
     `;
-    
-    connection.query(query, [user_id], (err, data) => {
-      if (err) {
-        reject(`Error in getUserById: cannot get user from Users table. ${err.message}`);
-      } else if (data.length === 0) {
-        reject(`Error in getUserById: no rows in the Users table matched user_id: ${user_id}.`);
-      } else {
-        resolve(data[0])
-      }
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id], (err, data) => {
+        if (err) {
+          reject(`Error in getUserById: cannot get user from Users table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getUserById: no rows in the Users table matched user_id: ${user_id}.`);
+        } else {
+          resolve(data[0])
+        }
+      }); 
     });
-    // closeConnection(connection)
   });
 }
 
@@ -36,7 +35,6 @@ const getUserById = async (user_id) => {
   returns: row in Users table on success, error message on error
 */
 const getUserByEmail = async (email) => {
-  const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
       Users (user_id, first_name, last_name, phone, email_address, 
@@ -47,20 +45,20 @@ const getUserByEmail = async (email) => {
       FROM Users 
       WHERE email_address = ?
     `;
-
-    connection.query(query, [email], (err, data) => {
-      if (err) {
-        console.log("error")
-        reject(`Error in getUserByEmail: cannot get user from Users table. ${err.message}`);
-      } else if (data.length === 0) {
-        console.log("doesn't exist")
-        resolve(undefined)
-      } else {
-        console.log("success")
-        resolve(data[0])
-      }
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [email], (err, data) => {
+        if (err) {
+          console.log("error")
+          reject(`Error in getUserByEmail: cannot get user from Users table. ${err.message}`);
+        } else if (data.length === 0) {
+          console.log("doesn't exist")
+          resolve(undefined)
+        } else {
+          console.log("success")
+          resolve(data[0])
+        }
+      });    
     });
-    // closeConnection(connection)
   });
 }
 
@@ -70,7 +68,6 @@ const getUserByEmail = async (email) => {
   returns: 1 on success, error message on error
 */
 const addUser = async (user_id, email_address, phone_number, first_name, last_name, password, date_of_birth, national_id, country) => {
-  const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
       Users (user_id, first_name, last_name, phone, email_address, 
@@ -81,102 +78,17 @@ const addUser = async (user_id, email_address, phone_number, first_name, last_na
     INSERT INTO Users (user_id, first_name, last_name, phone, email_address, user_password, date_of_birth, score, national_id, country, wallet_amount) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
-    connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, common.DEFAULT_USER_SCORE, national_id, country, common.WALLET_AMOUNT], (err, result) => {
-      if (err) {
-        reject(`Error in addUser: cannot add user to Users table. ${err.message}`);
-      } else if (result.affectedRows === 0) {
-        reject(`Error in addUser: no rows were modified when adding user to Users table. Email address: ${email_address} may already be registered`);
-      } else {
-        resolve(result.affectedRows) // should return 1 on success
-      }
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id, first_name, last_name, phone_number, email_address, password, date_of_birth, common.DEFAULT_USER_SCORE, national_id, country, common.WALLET_AMOUNT], (err, result) => {
+        if (err) {
+          reject(`Error in addUser: cannot add user to Users table. ${err.message}`);
+        } else if (result.affectedRows === 0) {
+          reject(`Error in addUser: no rows were modified when adding user to Users table. Email address: ${email_address} may already be registered`);
+        } else {
+          resolve(result.affectedRows) // should return 1 on success
+        }
+      });  
     });
-    // closeConnection(connection)
-  });
-}
-
-/*
-  parameters: user_id, friend_id, status
-  returns: 1 on success, error message on error
-*/
-const postFriendRequest= async (user_id, friend_id, status, start_datetime) => {
-  const connection = openConnection()
-  return new Promise((resolve, reject) => {
-    /*
-      User_Friendships (user_id, friend_id, status, start_datetime, end_datetime)
-    */
-
-    const query = `
-    INSERT INTO User_Friendships (user_id, friend_id, status, start_datetime) 
-    VALUES (?, ?, ?, ?)
-    `
-    connection.query(query, [user_id, friend_id, status, start_datetime], (err, result) => {
-      if (err) {
-        reject(`Error in postFriendRequest: cannot add friend request to User_Friendship table ${err.message}`);
-      } else if (result.affectedRows === 0) {
-        reject(`Error in addUser: no rows were modified when posting friend request to User_Friendship table.`);
-      } else {
-        resolve(result.affectedRows) // should return 1 on success
-      }
-    });
-    // closeConnection(connection)
-  });
-}
-
-/* 
-  parameters: user_id, friend_id, status
-    returns: 1 on success, error message on error
-*/
-const acceptFriendRequest = async(user_id, friend_id, status) => {
-  const connection = openConnection()
-  return new Promise((resolve, reject) => {
-      
-      const query = `
-      UPDATE User_Friendships
-      SET start_datetime = NOW(), status = ?
-      WHERE user_id = ? AND friend_id = ? AND end_datetime is NULL
-      `
-      connection.query(query, [status, user_id, friend_id], (err, result) => {
-          if (err) {
-              reject(`Error in acceptFriendRequest: ${err.message}`);
-          } else if (result.affectedRows === 0) {
-              reject(`
-              Error in acceptFriendRequest: no rows were modified when accepting request from 
-              user_id:${user_id}, to user_id:${friend_id} from User_Friendship table.
-              `);
-          } else {
-              resolve(result.affectedRows) // should return 1 on success
-          }
-      });
-      // closeConnection(connection)
-  });
-}
-
-/* 
-  parameters: user_id, friend_id, status
-    returns: 1 on success, error message on error
-*/
-const endFriendship = async(user_id, friend_id) => {
-  const connection = openConnection()
-  return new Promise((resolve, reject) => {
-      
-      const query = `
-      UPDATE User_Friendships
-      SET end_datetime = NOW()
-      WHERE user_id = ? AND friend_id = ? AND end_datetime is NULL
-      `
-      connection.query(query, [user_id, friend_id], (err, result) => {
-          if (err) {
-              reject(`Error in endFriendship: ${err.message}`);
-          } else if (result.affectedRows === 0) {
-              reject(`
-              Error in endFriendship: no rows were modified when ending friendship between 
-              user_id:${user_id} and user_id:${friend_id} from User_Friendship table.
-              `);
-          } else {
-              resolve(result.affectedRows) // should return 1 on success
-          }
-      });
-      // closeConnection(connection)
   });
 }
 
@@ -185,7 +97,6 @@ const endFriendship = async(user_id, friend_id) => {
   returns: entire users table on success, error message on error/when no users exist
 */
 const getAllUsers = async () => {
-  const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
       Users (user_id, first_name, last_name, phone, email_address, 
@@ -195,17 +106,17 @@ const getAllUsers = async () => {
       SELECT * 
       FROM Users 
     `;
-    
-    connection.query(query, (err, data) => {
-      if (err) {
-        reject(`Error in getAllUsers: cannot get users from Users table. ${err}`);
-      } else if (data.length === 0) {
-        reject(`Error in getAllUsers: no rows in the Users table.`);
-      } else {
-        resolve(data)
-      }
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, data) => {
+        if (err) {
+          reject(`Error in getAllUsers: cannot get users from Users table. ${err}`);
+        } else if (data.length === 0) {
+          reject(`Error in getAllUsers: no rows in the Users table.`);
+        } else {
+          resolve(data)
+        }
+      });  
     });
-    // closeConnection(connection)
   });
 };
 /* 
@@ -213,7 +124,6 @@ const getAllUsers = async () => {
   returns: users with given name on success, error message on error/when no pods exist
 */
 const getUsersByName = async (first_name, last_name) => {
-  const connection = openConnection()
   return new Promise((resolve, reject) => {
     /*
       Users (user_id, first_name, last_name, phone, email_address, 
@@ -224,20 +134,20 @@ const getUsersByName = async (first_name, last_name) => {
       FROM Users 
       WHERE first_name = ? AND last_name = ?
     `;
-
-    connection.query(query, [first_name, last_name], (err, data) => {
-      if (err) {
-        console.log("error")
-        reject(`Error in getUsersBy name: cannot get user from Users table. ${err.message}`);
-      } else if (data.length === 0) {
-        console.log("user doesn't exist")
-        resolve(undefined)
-      } else {
-        console.log("success")
-        resolve(data)
-      }
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [first_name, last_name], (err, data) => {
+        if (err) {
+          console.log("error")
+          reject(`Error in getUsersBy name: cannot get user from Users table. ${err.message}`);
+        } else if (data.length === 0) {
+          console.log("user doesn't exist")
+          resolve(undefined)
+        } else {
+          console.log("success")
+          resolve(data)
+        }
+      });   
     });
-    // closeConnection(connection)
   });
 };
 
@@ -246,8 +156,5 @@ module.exports = {
     addUser,
     getUserByEmail, 
     getAllUsers,
-    getUsersByName,
-    postFriendRequest,
-    acceptFriendRequest,
-    endFriendship
+    getUsersByName
 };

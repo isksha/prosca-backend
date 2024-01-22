@@ -154,7 +154,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-/* ELDA: this is only used when users want to create 
+/* this is only used when users want to create 
 a lifetime in a pod that has already been created (perhaps 
 after they finished their initial lifetime and dont have 
 an active lifetime) */
@@ -172,28 +172,6 @@ router.post('/create_lifetime', async (req, res) => {
         res.status(401).json( { error: 'Failed in creating lifetime' } );
     }
 });
-
-// ELDA: renew not needed anymore. if users want to 'renew lifeitme, they can recreate it
-// curl -i -X POST -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/renew_lifetime
-// router.post('/renew_lifetime', async (req, res) => {
-//     const podId = req.body.podId
-//     const startDate = common.getDate();
-
-//     try {
-//         const activeLifetime = await dao.fetchActiveLifetime(podId)
-//         if (activeLifetime !== undefined){
-//             const lifetimeClosed = await dao.endLifetime(activeLifetime.lifetime_id,activeLifetime.start_date);
-//             console.log(lifetimeClosed)
-//             const renewedLifetime = await dao.addLifetime(activeLifetime.lifetime_id, startDate,podId, activeLifetime.recurrence_rate,activeLifetime.contribution_amount);
-//             res.status(200).json( { success: 'Renewed lifetime successfully' } );
-//         } else{
-//             res.status(401).json( { error: 'Pod has no active Lifetimes' } );
-//         }
-//     } catch (err) {
-//         console.log(err)
-//         res.status(401).json( { error: 'Failed in renewing lifetime' } );
-//     }
-// });
 
 // curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/initiate_vote
 router.post('/initiate_vote', async(req, res) => {

@@ -32,7 +32,6 @@ router.get('/', async (req, res) => {
 
 // http://localhost:3000/users/Iskander/Iskanderovic
 router.get('/:firstName/:lastName', async (req, res) => {
-    console.log("got here");
     const firstName = req.params.firstName? req.params.firstName : "";
     const lastName = req.params.lastName? req.params.lastName : "";
     try {
@@ -49,32 +48,63 @@ router.get('/:firstName/:lastName', async (req, res) => {
     
 });
 
-// ELDA: unfinished
-router.get('/:userId', checkUserExists, async (req, res) => {
-    const foundUser = req.foundUser;
-    res.status(200).json(foundUser);
+// http://localhost:3000/users/suggest_friends/fname/lname
+router.get('/suggest_friends/:firstName/:lastName', checkUserExists,async (req, res) => {
+    // TODO: suggest friends after searching using first and last name (strict match?)
+    const firstName = req.params.firstName? req.params.firstName : "";
+    const lastName = req.params.lastName? req.params.lastName : "";
+    try {
+        const foundUsers = await dao.getUsersByName(firstName, lastName);
+        if (foundUsers) {
+            const foundUsersLimitedInfo = foundUsers.map(user => {
+                return {
+                    user_id: user.user_id,
+                    first_name: user.first_name, 
+                    last_name: user.last_name,
+                    score: user.score,
+                };
+            });
+            res.status(200).json(foundUsersLimitedInfo);
+        } else {
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
 });
 
-// ELDA: unfinished
-router.get('/suggest_pods/:userId', checkUserExists, async (req, res) => {
-    const foundUser = req.foundUser;
-    res.status(200).json(foundUser);
-    // TODO: suggest pods
-});
-
-// ELDA: unfinished
-router.get('/suggest_friends/:userId', checkUserExists,async (req, res) => {
-    const foundUser = req.foundUser;
-    res.status(200).json(foundUser);
-    // TODO: suggest friends
-});
-
-// ELDA: unfinished
+http://localhost:3000/users/get_friends/thisismyuserid
 router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
-    const foundUser = req.foundUser;
-    res.status(200).json(foundUser);
-    // TODO: get friends
+    const userId = req.params.userId;
+
+    try {
+        const foundUser = await dao.getUserById(userId);
+        res.status(200).json(foundUser);
+    } catch (err) {
+        res.status(404).json({ error: `Could not get user with id ${userId}` })
+    }
 });
+
+http://localhost:3000/users/get_requests/thisismyuserid
+router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
+    const firstName = req.params.userId
+    try {
+        const foundRequests = await dao.getPendingFriendshipRequests(userId);
+        if (foundRequests) {
+            const requestedUserIds = foundRequests.map(request => request.friendId);
+            const friendsInfo = await Promise.all(
+                requestedUserIds.map(async uid => await dao.getUserById(uid))).flat();
+            res.status(200).json(friendsInfo);
+        } else {
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
 
 
 router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
@@ -89,12 +119,7 @@ router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-// ELDA: unfinished
-router.get('/check_user_eligibility/:userId/:podId', checkUserExists, async (req, res) => {
-    const podId = req.params.podId;
-    const userId = req.params.userId;
-    // TODO: check pod eligibility
-});
+
 
 
 // ********************************    POST routes *********************************** //
