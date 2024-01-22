@@ -130,9 +130,8 @@ const getUsersByName = async (first_name, last_name) => {
       user_password, date_of_birth, score, national_id, country, wallet_amount)
     */
       const query = `
-      SELECT * 
-      FROM Users 
-      WHERE first_name = ? AND last_name = ?
+      WITH users_nw AS (SELECT user_id, CONCAT(first_name, ' ', last_name) AS user_name, phone, email_address, user_password, date_of_birth,score,national_id,country,wallet_amount FROM Users )
+      SELECT * FROM users_nw WHERE user_name LIKE ?;
     `;
     dbConnection.getConnection((err, connection) => {
       connection.query(query, [first_name, last_name], (err, data) => {

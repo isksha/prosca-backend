@@ -35,7 +35,7 @@ router.get('/:firstName/:lastName', async (req, res) => {
     const firstName = req.params.firstName? req.params.firstName : "";
     const lastName = req.params.lastName? req.params.lastName : "";
     try {
-        const foundUsers = await dao.getUsersByName(firstName, lastName);
+        const foundUsers = await dao.getUsersByName(userName);
         if(foundUsers){
             res.status(200).json(foundUsers);
         }else{
