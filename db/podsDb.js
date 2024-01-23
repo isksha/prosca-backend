@@ -101,7 +101,7 @@ const getPodsByName = async (pod_name) => {
   return new Promise((resolve, reject) => {
     // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
     const query = `
-    WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size FROM Pods
+    WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size, pod_code FROM Pods
     JOIN Pod_Lifetimes PL ON Pods.pod_id = PL.pod_id
     WHERE pod_name LIKE ? AND PL.end_date IS NULL)
     SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size, pod_code FROM pods_lifetimes
