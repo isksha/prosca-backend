@@ -9,7 +9,6 @@ const app = express();
 const usersRouter = require('./routes/users');
 const podsRouter = require('./routes/pods');
 const votesRouter = require('./routes/votes');
-const walletsRouter = require('./routes/wallets');
 const depositsRouter = require('./routes/deposits');
 const withdrawalsRouter = require('./routes/withdrawals');
 
@@ -22,7 +21,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/users', usersRouter);
 app.use('/pods', podsRouter);
 app.use('/votes', votesRouter);
-app.use('/wallets', walletsRouter);
 app.use('/deposits', depositsRouter);
 app.use('/withdrawals', withdrawalsRouter);
 
