@@ -81,7 +81,6 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
         res.status(200).json(foundPod);
     } catch (err) {
-        console.log(err)
         res.status(401).json({ error: 'Could not get pod' })
     }
 });
@@ -123,10 +122,30 @@ router.get('/get_members/:podID', async (req, res) => {
     
 });
 
+// gets deposits and withdrawals for the pod
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
-    const foundPod = req.foundPod;
-    res.status(200).json(foundPod);
-    // TODO: DB calls
+    const pod_id = req.params.podId;
+
+    const withdrawals = await dao.getWithdrawalsByPodId(pod_id);
+    const deposits = await dao.getDepositsByPodId(pod_id);
+    res.status(200).json({withdrawals, deposits});
+});
+
+// gets payout dates for users for current lifetime
+router.get('/payout_dates/:lifetime_id/', async(req, res) => {
+    const lifetime_id = req.params.lifetime_id;
+
+    try {
+        const found_lifetime = await dao.getLifetime(lifetime_id);
+        if (found_lifetime) {
+            const payouts = await dao.getPayoutDatesByLifetimeId(lifetime_id);
+            res.status(200).json({payouts});
+        } else{
+            res.status(404).json({error: 'Could not get associated lifetime' });
+        }
+    } catch (err) {
+        res.status(401).json({ error: 'Could not get payout dates' })
+    }
 });
 
 // ********************************    POST routes *********************************** //
