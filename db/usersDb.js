@@ -25,6 +25,7 @@ const getUserById = async (user_id) => {
         } else {
           resolve(data[0])
         }
+        connection.release()
       }); 
     });
   });
@@ -57,6 +58,7 @@ const getUserByEmail = async (email) => {
           console.log("success")
           resolve(data[0])
         }
+        connection.release()
       });    
     });
   });
@@ -87,6 +89,7 @@ const addUser = async (user_id, email_address, phone_number, first_name, last_na
         } else {
           resolve(result.affectedRows) // should return 1 on success
         }
+        connection.release()
       });  
     });
   });
@@ -115,6 +118,7 @@ const getAllUsers = async () => {
         } else {
           resolve(data)
         }
+        connection.release()
       });  
     });
   });
@@ -146,6 +150,7 @@ const getUsersByName = async (user_name) => {
           console.log("success")
           resolve(data)
         }
+        connection.release()
       });
     });
   });

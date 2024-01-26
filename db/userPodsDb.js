@@ -21,6 +21,7 @@ const getPodMembers = async (pod_id) => {
             } else {
             resolve(data)
             }
+            connection.release()
         });
       });
     });
@@ -48,6 +49,7 @@ const addUserToPod = async(user_id, pod_id, date_joined) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             });
         });
     });
@@ -77,6 +79,7 @@ const removeUserFromPod = async(user_id, pod_id) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             });
         });
     });
@@ -108,6 +111,7 @@ const getUserPods = async (user_id) => {
                     console.log("success")
                     resolve(data)
                 }
+                connection.release()
             });
         });
     });

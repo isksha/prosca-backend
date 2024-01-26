@@ -20,6 +20,7 @@ const addUserStripeConnectedAccount = async(user_id, stripe_id) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             });
         });
     });
@@ -42,6 +43,7 @@ const getStripeIdFromUserId = async (user_id) => {
                 } else {
                     resolve(result[0].stripe_id)
                 }
+                connection.release()
             });
         });
         

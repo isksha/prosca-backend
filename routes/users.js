@@ -407,10 +407,18 @@ router.delete('/end_friendship/', async (req, res) => {
 module.exports = router;
 
 // demo function - i will erase it soon
-router.get('/v1/stripe/', async (req, res) => {
-    // const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 10)
-    // const account = await stripe.createStripeConnectedAccount("h", "iskanderr@gmail.com", "Jillian", "Tobius");
-    // const acct_link = await stripe.navigateToStripeAuth(account)
-    // res.redirect(acct_link)
-    const payout = await stripe.payoutToBankAccount('acct_1OUqloFoZunolgPh', 10)
+router.get('/test/v1/stripe/login/', async (req, res) => {
+    const account = await stripe.createStripeConnectedAccount("h", "iskanderrrrrrr@gmail.com", "Jillian", "Tobius");
+    const acct_link = await stripe.navigateToStripeAuth(account)
+    res.redirect(acct_link)
 })
+
+// demo function - i will erase it soon
+router.get('/test/v1/stripe/payout/', async (req, res) => {
+    const charge = await stripe.chargeStripeAccount('acct_1OUqloFoZunolgPh', 11)
+    const pay = await stripe.payStripeAccount('acct_1OUqloFoZunolgPh', 12)
+    const payout = await stripe.payoutToBankAccount('acct_1OUqloFoZunolgPh', 13)
+    console.log("finished")
+    res.status(200).json({ success: 'Payout successful' });
+})
+
