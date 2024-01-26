@@ -81,6 +81,29 @@ const updateDepositAmount = async(deposit_id, new_amt) => {
     });
 }
 
+const getDepositsByPodId = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT * 
+        FROM Pod_Deposits 
+        WHERE pod_id = ?  
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getDepositByPodId: cannot get deposits with specified id. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getDepositByPodId: no rows in the Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
 /********************************     Withdrawals *********************************** */
 
 const getWithdrawal = async (transaction_id) => {
@@ -125,6 +148,29 @@ const addWithdrawal = async (user_id, withdrawal_amount, pod_id) => {
                     reject(`Error in addWithdrawal: no rows were modified when adding user to Pod_Withdrawals table.`);
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getWithdrawalsByPodId = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT * 
+        FROM Pod_Withdrawals 
+        WHERE pod_id = ?  
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getWithdrawalsByPodId: cannot get withdrawals with specified id. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getWithdrawalsByPodId: no rows in the Pod_Withdrawals table.`);
+                } else {
+                    resolve(data)
                 }
                 connection.release()
             });
@@ -180,5 +226,7 @@ module.exports = {
     updateDepositAmount,
     getWithdrawal,
     addWithdrawal,
-    getUserLifetimesInfo
+    getUserLifetimesInfo,
+    getWithdrawalsByPodId,
+    getDepositsByPodId
 };
