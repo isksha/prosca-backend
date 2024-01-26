@@ -4,8 +4,6 @@ const transactionsDb = require('./transactionsDb')
 const userPodsDb = require('./userPodsDb')
 const usersDb = require('./usersDb')
 const usersStripeDb = require('./usersStripeDb')
-const votesDb = require('./votesDb')
-const walletsDb = require('./walletsDb')
 const userFriendshipsDb = require('./userFriendshipsDb')
 const userPayoutDatesDb = require('./userPayoutDatesDb')
 
@@ -16,8 +14,6 @@ module.exports = {
     ...userPodsDb,
     ...usersStripeDb,
     ...usersDb,
-    ...votesDb,
-    ...walletsDb,
     ...userPayoutDatesDb,
     ...userFriendshipsDb,
 }

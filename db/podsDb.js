@@ -23,6 +23,7 @@ const getAllPods = async () => {
           console.log(data)
           resolve(data)
         }
+        connection.release()
       });
     });
     // closeConnection(connection)
@@ -60,6 +61,7 @@ const explorePublicPods = async () => {
           console.log(data)
           resolve(data)
         }
+        connection.release()
       });
     });
   });
@@ -87,6 +89,7 @@ const getPod = async (pod_id) => {
         } else {
           resolve(data[0])
         }
+        connection.release()
       });
     });
     // closeConnection(connection)
@@ -119,6 +122,7 @@ const getPodsByName = async (pod_name) => {
         } else {
           resolve(data)
         }
+        connection.release()
       });
     });
   });
@@ -145,6 +149,7 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date, pod_co
         } else {
           resolve(result.affectedRows) // should return 1 on success
         }
+        connection.release()
       });
     });
   });

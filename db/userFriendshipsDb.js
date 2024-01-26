@@ -27,6 +27,7 @@ const getPendingFriendshipRequests = async (user_id) => {
             console.log("success")
             resolve(data)
           }
+            connection.release()
         });
       });
     });
@@ -55,6 +56,7 @@ const postFriendRequest= async (user_id, friend_id, status, start_datetime) => {
           } else {
             resolve(result.affectedRows) // should return 1 on success
           }
+            connection.release()
         });
       });
     });
@@ -83,6 +85,7 @@ const acceptFriendRequest = async(user_id, friend_id, status) => {
           } else {
               resolve(result.affectedRows) // should return 1 on success
           }
+            connection.release()
         });
       }); 
     });
@@ -111,6 +114,7 @@ const endFriendship = async(user_id, friend_id) => {
           } else {
               resolve(result.affectedRows) // should return 1 on success
           }
+            connection.release()
         });
       });
     });

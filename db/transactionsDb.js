@@ -20,23 +20,24 @@ const getDeposit = async (transaction_id) => {
                 } else {
                     resolve(data)
                 }
+                connection.release()
             });
         });
     });
 };
 
 /*
-  parameters: user_id, transaction_id, deposit_amount
+  parameters: user_id, transaction_id, deposit_amount, pod_id
   returns: 1 on success, error message on error
 */
-const addDeposit = async (user_id, deposit_amount) => {
+const addDeposit = async (user_id, deposit_amount, pod_id) => {
     return new Promise((resolve, reject) => {
         const query = `
-        INSERT INTO Pod_Deposits (deposit_id, amount, transaction_date, user_id) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO Pod_Deposits (deposit_id, amount, transaction_date, user_id, pod_id) 
+        VALUES (?, ?, ?, ?, ?)
         `
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [common.generateUniqueId(), deposit_amount, common.getDate(), user_id], (err, result) => {
+            connection.query(query, [common.generateUniqueId(), deposit_amount, common.getDate(), user_id, pod_id], (err, result) => {
                 if (err) {
                     reject(`Error in addDeposit: cannot add deposit to Pod_Deposits table. ${err.message}`);
                 } else if (result.affectedRows === 0) {
@@ -44,6 +45,7 @@ const addDeposit = async (user_id, deposit_amount) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             }); 
         });  
     });
@@ -55,7 +57,7 @@ const addDeposit = async (user_id, deposit_amount) => {
 */
 const updateDepositAmount = async(deposit_id, new_amt) => {
     return new Promise((resolve, reject) => {
-        // Pod_Deposits(transaction_id, amount, transaction_date, user_id)
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
         const query = `
         UPDATE Pod_Deposits
         SET amount = ?
@@ -73,6 +75,7 @@ const updateDepositAmount = async(deposit_id, new_amt) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             });
         });
     });
@@ -82,7 +85,7 @@ const updateDepositAmount = async(deposit_id, new_amt) => {
 
 const getWithdrawal = async (transaction_id) => {
     return new Promise((resolve, reject) => {
-        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id)
+        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
         const query = `
         SELECT * 
         FROM Pod_Withdrawals 
@@ -97,24 +100,25 @@ const getWithdrawal = async (transaction_id) => {
                 } else {
                     resolve(data)
                 }
+                connection.release()
             });
         });
     });
 };
 
 /*
-  parameters: user_id, transaction_id, deposit_amount
+  parameters: user_id, transaction_id, deposit_amount, podi_id
   returns: 1 on success, error message on error
 */
-const addWithdrawal = async (user_id, withdrawal_amount) => {
+const addWithdrawal = async (user_id, withdrawal_amount, pod_id) => {
     return new Promise((resolve, reject) => {
 
         const query = `
-        INSERT INTO Pod_Withdrawals (withdrawal_id, amount, transaction_date, user_id) 
-        VALUES (?, ?, ?, ?)
+        INSERT INTO Pod_Withdrawals (withdrawal_id, amount, transaction_date, user_id, pod_id) 
+        VALUES (?, ?, ?, ?, ?)
         `
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [common.generateUniqueId(), withdrawal_amount, common.getDate(), user_id], (err, result) => {
+            connection.query(query, [common.generateUniqueId(), withdrawal_amount, common.getDate(), user_id, pod_id], (err, result) => {
                 if (err) {
                     reject(`Error in addWithdrawal: cannot add withdrawal to Pod_Withdrawals table. ${err.message}`);
                 } else if (result.affectedRows === 0) {
@@ -122,6 +126,7 @@ const addWithdrawal = async (user_id, withdrawal_amount) => {
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
+                connection.release()
             });
         });
     });
@@ -163,6 +168,7 @@ const getUserLifetimesInfo = async(user_id) => {
                 } else {
                     resolve(data)
                 }
+                connection.release()
             });
         });
     });

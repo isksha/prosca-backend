@@ -22,6 +22,7 @@ const createLifetime = async(lifetime_id, pod_id, recurrence_rate, contribution_
         } else {
           resolve(result.affectedRows) // should return 1 on success
         }
+        connection.release()
       });
     });
   });
@@ -48,6 +49,7 @@ const startLifetime = async(lifetime_id) => {
         } else {
           resolve(result.affectedRows) // should return 1 on success
         }
+        connection.release()
       });
     });
   });
@@ -73,6 +75,7 @@ const fetchActiveLifetime = async(pod_id) => {
           } else {
             resolve(data[0]) // should return 1 on success
           }
+          connection.release()
         });
       });
     });
@@ -98,6 +101,7 @@ const fetchAllPodLifetimes = async(pod_id) => {
         } else {
           resolve(data[0]) // should return 1 on success
         }
+        connection.release()
       });
     });
   });
@@ -122,6 +126,7 @@ const fetchAllLifetimes = async() => {
         } else {
           resolve(data[0]) // should return 1 on success
         }
+        connection.release()
       });
     });
   });
@@ -148,6 +153,7 @@ const endLifetime = async(lifetime_id) => {
           } else {
             resolve(result.affectedRows) // should return 1 on success
           }
+          connection.release();
         });
       });
     });
@@ -173,6 +179,7 @@ const getLifetime = async(lifetime_id) => {
             } else {
                 resolve(data[0])
             }
+            connection.release()
           });
         });
     });
