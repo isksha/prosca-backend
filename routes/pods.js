@@ -150,7 +150,7 @@ router.post('/', async (req, res) => {
     const podVisibility = req.body.visibility;
     const podCreatorId = req.body.pod_creator_id;
     const podCreationDate = common.getDate();
-    const podCode = generatePodInvitationCode(podVisibility);
+    const podCode = generatePodInvitationCode();
     const podSize = req.body.pod_size;
 
     const generatedLifetimeId = common.generateUniqueId();
