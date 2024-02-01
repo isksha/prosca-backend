@@ -16,8 +16,9 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.6.3",
     "node-schedule": "^2.1.1",
-    "stripe": "^14.10.0",
+    "short-unique-id": "^5.0.3",
     "socket.io": "^4.7.2",
+    "stripe": "^14.10.0",
     "uuid": "^9.0.1"
   }
 }

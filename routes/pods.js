@@ -1,4 +1,6 @@
 const express = require('express');
+const ShortUniqueId = require('short-unique-id');
+
 
 const router = express.Router();
 
@@ -7,13 +9,8 @@ const paymentScheduling = require('../payments/paymentScheduling');
 const dao = require('../db/dataAccessor');
 // *****************************  Internal helpers *********************************** //
 
-function generatePodInvitationCode(podVisibility) {
-    const rand1 = Math.floor(Math.random() * 9).toString()
-    const rand2 = Math.floor(Math.random() * 9).toString()
-    const rand3 = Math.floor(Math.random() * 9).toString()
-    const rand4 = Math.floor(Math.random() * 9).toString()
-    const rand5 = Math.floor(Math.random() * 9).toString()
-    return rand1.concat(rand2,rand3,rand4,rand5)
+function generatePodInvitationCode() {
+    return new ShortUniqueId().randomUUID(9);
 }
 
 // Define a middleware function to check if a pod exists
