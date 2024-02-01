@@ -8,10 +8,6 @@ const dao = require('../db/dataAccessor');
 // *****************************  Internal helpers *********************************** //
 
 function generatePodInvitationCode(podVisibility) {
-    if (podVisibility !== common.PRIVATE_VISIBILITY_STRING) {
-        return null;
-    }
-
     const rand1 = Math.floor(Math.random() * 9).toString()
     const rand2 = Math.floor(Math.random() * 9).toString()
     const rand3 = Math.floor(Math.random() * 9).toString()
