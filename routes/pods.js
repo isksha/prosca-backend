@@ -68,11 +68,16 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.numUsers = numUsers.length;
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
-
-        foundPod.contributionAmt = activeLifetime.contribution_amount
-        foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
-        foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
-        res.status(200).json(foundPod);
+        if (activeLifetime === undefined) {
+            const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
+            foundPod.contributionAmt = unstartedLifetime.contribution_amount
+            res.status(200).json(foundPod);
+        } else {
+            foundPod.contributionAmt = activeLifetime.contribution_amount
+            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
+            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
+            res.status(200).json(foundPod);
+        }
     } catch (err) {
         res.status(401).json({ error: 'Could not get pod' })
     }
