@@ -159,6 +159,7 @@ router.post('/', async (req, res) => {
 
     try {
         const newPod = await dao.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode, podSize);
+        await dao.addUserToPod(podCreatorId, generatedPodId, podCreationDate)
         const lifetime = await dao.createLifetime(generatedLifetimeId, generatedPodId, recurrenceRate, contributionAmount)
         res.status(200).json( { pod_code : podCode } );
     } catch (err) {
