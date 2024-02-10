@@ -178,6 +178,43 @@ const getWithdrawalsByPodId = async (pod_id) => {
     });
 }
 
+/********************************  Joined Deposits and Withdrawals  *********************************** */
+const getTransactionByPodId = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT
+            w.amount AS amount,
+            d.amount AS amount,
+            w.transaction_date AS transaction_date,
+            d.transaction_date AS transaction_date,
+            w.user_id AS user_id,
+            d.user_id AS user_id,
+            u.first_name AS first_name
+            u.last_name AS last_name
+            d.deposit_id AS deposit_id
+            w.withdrawal_id AS withdrawal_id
+        FROM Pod_Withdrawals w
+        JOIN Pod_Deposits d ON w.pod_id = d.pod_id
+        JOIN Users u ON u.user_id = w.user_id OR u.user_id = d.user_id
+        ORDER BY transaction_date DESC;
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getTransactionByPodId: cannot get transactions with specified id. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getTransactionByPodId: no rows in the Pod_Withdrawals join Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
 /********************************     Lifetimes *********************************** */
 
 /* 
