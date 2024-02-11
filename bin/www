@@ -21,33 +21,6 @@ app.set('port', port);
 
 var server = http.createServer(app);
 
-/**
- * CYNTHIA: UNFINISHED
- * Enable websocket for server to listen real time
- */
-
-// io = require('socket.io')(server);
-// io.on('connection', (socket) => {
-//   console.log('user connected');
-//   socket.on('messagedetection', (senderName,messageContent) => { 
-//    //create a message object 
-   
-//    let  message = {"message":messageContent, 
-//                    "senderName":senderName}
-     
-// // send the message to all users including the sender  using io.emit      
-//    io.emit('message', message )
-//    })
-//    socket.on('disconnect', function() {
-//     console.log(userNickname +' has left ');
-//     socket.broadcast.emit( "userdisconnect" ,' user has left'); 
-//   });
-// });
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
 server.listen(port, () => {
   console.log(`Server is listening at the port: ${port}`);
 });
@@ -113,3 +86,4 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+module.exports = server;

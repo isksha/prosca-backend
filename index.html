@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      body { margin: 0; background-color: #90EE90; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .container {max-width: 400px; margin: 50px auto; padding: 20px; background-color: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
+      .logo {text-align: center; font-size: 24px; font-weight: bold; margin-top: 5px; color: #008000;}
+      #form { background: rgba(26, 1, 13, 0.15); padding: 0.25rem; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); width: 100%}
+      #input { border: 1px solid #ccc; border-radius: 5px; padding: 0 1rem; flex-grow: 1; margin: 0.25rem;}
+      #input:focus { outline: none; }
+      #form > button { background: #013512; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #f0f0f0; }
+
+      #messageArea { list-style-type: none; margin: 0; padding: 0; }
+      #messageArea > li { padding: 0.5rem 1rem; }
+      #messageArea > li:nth-child(odd) { background: #a7a9a7; }
+      .messageArea {
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    height: 400px;
+    overflow-y: scroll;}
+    </style>
+  </head>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+    var socket = io();
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var friend_id = "11111111";
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (input.value) {
+        socket.emit('sendMessage', friend_id, input.value);
+        input.value = '';
+        }
+    });
+    </script>
+  <body>
+    <div class="container">
+    <h1 class="logo">PROSCA CHAT FEATURE</h1>
+    <p>Username</p>
+    <div class="messageArea" id="messageArea"></div>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><button>Send</button>
+    </form>
+    </div>
+  </body>
+</html>
