@@ -2,7 +2,9 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-require("dotenv").config();
+require("dotenv").config()
+
+const reputation = require('./reputation/reputationScoreCalculation');
 
 const app = express();
 
@@ -25,5 +27,7 @@ app.use('/votes', votesRouter);
 app.use('/deposits', depositsRouter);
 app.use('/withdrawals', withdrawalsRouter);
 app.use('/chats', chatsRouter);
+
+reputation.runReputationScoreCalculation().then(r => console.log(r));
 
 module.exports = app;
