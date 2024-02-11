@@ -1,4 +1,6 @@
 const express = require('express');
+const ShortUniqueId = require('short-unique-id');
+
 
 const router = express.Router();
 
@@ -7,17 +9,8 @@ const paymentScheduling = require('../payments/paymentScheduling');
 const dao = require('../db/dataAccessor');
 // *****************************  Internal helpers *********************************** //
 
-function generatePodInvitationCode(podVisibility) {
-    if (podVisibility !== common.PRIVATE_VISIBILITY_STRING) {
-        return null;
-    }
-
-    const rand1 = Math.floor(Math.random() * 9).toString()
-    const rand2 = Math.floor(Math.random() * 9).toString()
-    const rand3 = Math.floor(Math.random() * 9).toString()
-    const rand4 = Math.floor(Math.random() * 9).toString()
-    const rand5 = Math.floor(Math.random() * 9).toString()
-    return rand1.concat(rand2,rand3,rand4,rand5)
+function generatePodInvitationCode() {
+    return new ShortUniqueId().randomUUID(9);
 }
 
 // Define a middleware function to check if a pod exists
@@ -75,11 +68,16 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.numUsers = numUsers.length;
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
-
-        foundPod.contributionAmt = activeLifetime.contribution_amount
-        foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
-        foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
-        res.status(200).json(foundPod);
+        if (activeLifetime === undefined) {
+            const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
+            foundPod.contributionAmt = unstartedLifetime.contribution_amount
+            res.status(200).json(foundPod);
+        } else {
+            foundPod.contributionAmt = activeLifetime.contribution_amount
+            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
+            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
+            res.status(200).json(foundPod);
+        }
     } catch (err) {
         res.status(401).json({ error: 'Could not get pod' })
     }
@@ -122,13 +120,12 @@ router.get('/get_members/:podID', async (req, res) => {
     
 });
 
-// gets deposits and withdrawals for the pod
+// gets deposits and withdrawals for the pod for pod transaction history
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
     const pod_id = req.params.podId;
 
-    const withdrawals = await dao.getWithdrawalsByPodId(pod_id);
-    const deposits = await dao.getDepositsByPodId(pod_id);
-    res.status(200).json({withdrawals, deposits});
+    const transactions = await dao.getTransactionByPodId(pod_id);
+    res.status(200).json({transactions});
 });
 
 // gets payout dates for users for current lifetime
@@ -157,7 +154,7 @@ router.post('/', async (req, res) => {
     const podVisibility = req.body.visibility;
     const podCreatorId = req.body.pod_creator_id;
     const podCreationDate = common.getDate();
-    const podCode = generatePodInvitationCode(podVisibility);
+    const podCode = generatePodInvitationCode();
     const podSize = req.body.pod_size;
 
     const generatedLifetimeId = common.generateUniqueId();
@@ -166,6 +163,7 @@ router.post('/', async (req, res) => {
 
     try {
         const newPod = await dao.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode, podSize);
+        await dao.addUserToPod(podCreatorId, generatedPodId, podCreationDate)
         const lifetime = await dao.createLifetime(generatedLifetimeId, generatedPodId, recurrenceRate, contributionAmount)
         res.status(200).json( { pod_code : podCode } );
     } catch (err) {

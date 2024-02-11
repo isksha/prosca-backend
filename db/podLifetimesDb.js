@@ -71,7 +71,7 @@ const fetchActiveLifetime = async(pod_id) => {
           if (err) {
             reject(`Error in fetchActiveLifetime: cannot fetch active lifetim of pod_id: ${pod_id} from Pod_Lifetimes Table. ${err.message}`);
           } else if (data.length === 0) {
-            reject(`Error in fetchActiveLifetime: no rows in Pod_Lifetimes table matched pod_id: ${pod_id}`);
+            resolve(undefined)
           } else {
             resolve(data[0]) // should return 1 on success
           }
@@ -79,6 +79,32 @@ const fetchActiveLifetime = async(pod_id) => {
         });
       });
     });
+}
+
+/*
+    parameters: pod_id
+    returns: row in Pod_Lifetimes table on success, error message on error
+*/
+const fetchUnstartedLifetime = async(pod_id) => {
+  return new Promise((resolve, reject) => {
+    // Pod_Lifetimes(lifetime_id, start_date, pod_id, end_date, recurrence_rate, contribution_amount)
+    const query = `
+      SELECT * FROM Pod_Lifetimes
+      WHERE pod_id = ? AND start_date IS NULL AND end_date IS NULL
+      `
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [pod_id], (err, data) => {
+        if (err) {
+          reject(`Error in fetchActiveLifetime: cannot fetch active lifetim of pod_id: ${pod_id} from Pod_Lifetimes Table. ${err.message}`);
+        } else if (data.length === 0) {
+          resolve(undefined)
+        } else {
+          resolve(data[0]) // should return 1 on success
+        }
+        connection.release()
+      });
+    });
+  });
 }
 
 /*
@@ -196,6 +222,7 @@ module.exports = {
     createLifetime,
     startLifetime,
     fetchActiveLifetime,
+    fetchUnstartedLifetime,
     endLifetime,
     getLifetimeStatement,
     fetchAllPodLifetimes,
