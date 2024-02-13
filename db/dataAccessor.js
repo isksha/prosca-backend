@@ -7,6 +7,7 @@ const usersStripeDb = require('./usersStripeDb')
 const userFriendshipsDb = require('./userFriendshipsDb')
 const userPayoutDatesDb = require('./userPayoutDatesDb')
 const chatsDb = require('./chatsDb')
+const reputationsDb = require('./userReputationsDb')
 
 module.exports = {
     ...podLifetimesDb,
@@ -18,4 +19,5 @@ module.exports = {
     ...userPayoutDatesDb,
     ...userFriendshipsDb,
     ...chatsDb,
+    ...reputationsDb
 }

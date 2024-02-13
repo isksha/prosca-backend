@@ -18,6 +18,15 @@ const checkUserExists = async (req, res, next) => {
     }
 };
 
+const conductPeerReviewUpdate = async (user_id, command_str) => {
+    try {
+        await dao.getUserById(user_id);
+    } catch (err) {
+        return res.status(404).json({ error: 'UNF' });
+    }
+    await dao.updateUserPeerReputation(user_id, command_str);
+};
+
 // ********************************     GET routes *********************************** //
 
 router.get('/', async (req, res) => {
@@ -74,7 +83,7 @@ router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
     }
 });
 
-http://localhost:3000/users/get_friends/thisismyuserid
+// http://localhost:3000/users/get_friends/thisismyuserid
 router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId;
 
@@ -86,7 +95,7 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-http://localhost:3000/users/get_requests/thisismyuserid
+// http://localhost:3000/users/get_requests/thisismyuserid
 router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     const firstName = req.params.userId
     try {
@@ -105,8 +114,6 @@ router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-
-
 router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     const foundUser = req.foundUser;
     const userId = req.params.userId;
@@ -119,8 +126,15 @@ router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-
-
+router.get('/get_reputation/:userId', checkUserExists, async (req, res) => {
+    try {
+        const foundReputation = await dao.getUserReputationById(req.foundUser.user_id);
+        res.status(200).json(foundReputation)
+    } catch (err) {
+        console.log(err)
+        res.status(404).json({ error: `Could not increment reputation for user` })
+    }
+});
 
 // ********************************    POST routes *********************************** //
 
@@ -149,6 +163,7 @@ router.post('/', async (req, res) => {
 
     try {
         await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
+        await dao.addUserReputation(userId)
     } catch (err) {
         return res.status(401).json({ error: 'Failed to add user' })
     }
@@ -191,6 +206,32 @@ router.post('/update_reputation', async (req, res) => {
         res.status(200).json(foundUser);
     } else {
         res.status(401).json({ error: 'Failed to calculate reputation' });
+    }
+});
+
+// curl -i -X POST -d 'userId=4605edcc-98e6-4548-8ea6-05cce6aeb619' http://localhost:3000/users/increment_peer_review
+router.post('/increment_peer_review', async (req, res) => {
+    const userId = req.body.userId
+
+    try {
+        await conductPeerReviewUpdate(userId, "increment");
+        res.status(200).json({ success : 'Incremented reputation successfully' });
+    } catch (err) {
+        res.status(401).json({ error: 'Failed to increment reputation' });
+    }
+});
+
+
+// curl -i -X POST -d 'userId=4605edcc-98e6-4548-8ea6-05cce6aeb619' http://localhost:3000/users/decrement_peer_review
+router.post('/decrement_peer_review', async (req, res) => {
+    const userId = req.body.userId
+
+    try {
+        await conductPeerReviewUpdate(userId, "decrement");
+        res.status(200).json({ success : 'Decremented reputation successfully' });
+    } catch (err) {
+        console.log(err)
+        res.status(401).json({ error: 'Failed to decrement reputation' });
     }
 });
 
