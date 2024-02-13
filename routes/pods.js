@@ -123,9 +123,12 @@ router.get('/get_members/:podID', async (req, res) => {
 // gets deposits and withdrawals for the pod for pod transaction history
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
     const pod_id = req.params.podId;
-
-    const transactions = await dao.getTransactionByPodId(pod_id);
-    res.status(200).json({transactions});
+    try {
+        const transactions = await dao.getTransactionByPodId(pod_id);
+        res.status(200).json({transactions});      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
 });
 
 // gets payout dates for users for current lifetime
