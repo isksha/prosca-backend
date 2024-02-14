@@ -73,7 +73,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
             foundPod.contributionAmt = unstartedLifetime.contribution_amount;
             foundPod.isActive = unstartedLifetime.isActive;
-            foundPod.recurRate = unstartedLifetime.recurrence_rate;
+            foundPod.recurrenceRate = unstartedLifetime.recurrence_rate;
             res.status(200).json(foundPod);
         } else {
             console.log('inactive')
@@ -81,7 +81,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
             foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
             foundPod.isActive = activeLifetime.isActive;
-            foundPod.recurRate = activeLifetime.recurrence_rate;
+            foundPod.recurrenceRate = activeLifetime.recurrence_rate;
             res.status(200).json(foundPod);
         }
     } catch (err) {
@@ -131,7 +131,7 @@ router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
     const pod_id = req.params.podId;
     try {
         const transactions = await dao.getTransactionByPodId(pod_id);
-        res.status(200).json({transactions});      
+        res.status(200).json(transactions);      
     } catch (err) {
         res.status(404).json({error: `Error : ${err}` });
     }
