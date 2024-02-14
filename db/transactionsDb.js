@@ -87,7 +87,6 @@ const getDepositsByPodId = async (pod_id) => {
         const query = `
         SELECT * 
         FROM Pod_Deposits 
-        WHERE pod_id = ?  
         `;
         dbConnection.getConnection((err, connection) => {
             connection.query(query, [pod_id], (err, data) => {
@@ -95,6 +94,31 @@ const getDepositsByPodId = async (pod_id) => {
                     reject(`Error in getDepositByPodId: cannot get deposits with specified id. ${err}`);
                 } else if (data.length === 0) {
                     reject(`Error in getDepositByPodId: no rows in the Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getMemberContrAmounts = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT d.user_id, SUM(d.amount), u.first_name, u.last_name
+        FROM Pod_Deposits d
+        JOIN Users u ON u.user_id = d.user_id
+        WHERE d.pod_id = ?
+        GROUP BY d.user_id, u.first_name, u.last_name;
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getMemberContrAmounts: cannot get member total contribution amounts for pod. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getMemberContrAmounts: no rows in Pod_deposits join Users table.`);
                 } else {
                     resolve(data)
                 }
@@ -193,6 +217,7 @@ const getTransactionByPodId = async (pod_id) => {
             'withdrawal' AS transac_type
         FROM Pod_Withdrawals w
         JOIN Users u ON u.user_id = w.user_id
+        WHERE w.pod_id = ?
         UNION
         SELECT
             d.amount AS amnt,
@@ -203,10 +228,11 @@ const getTransactionByPodId = async (pod_id) => {
             'deposit' AS transac_type
         FROM Pod_Deposits d
         JOIN Users u ON u.user_id = d.user_id
+        WHERE d.pod_id = ?
         ORDER BY transac_date DESC;
         `;
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [pod_id], (err, data) => {
+            connection.query(query, [pod_id, pod_id], (err, data) => {
                 if (err) {
                     reject(`Error in getTransactionByPodId: cannot get transactions with specified id. ${err}`);
                 } else if (data.length === 0) {
@@ -271,5 +297,6 @@ module.exports = {
     getUserLifetimesInfo,
     getWithdrawalsByPodId,
     getDepositsByPodId,
-    getTransactionByPodId
+    getTransactionByPodId,
+    getMemberContrAmounts
 };

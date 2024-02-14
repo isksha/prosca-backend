@@ -63,7 +63,8 @@ const fetchActiveLifetime = async(pod_id) => {
     return new Promise((resolve, reject) => {
       // Pod_Lifetimes(lifetime_id, start_date, pod_id, end_date, recurrence_rate, contribution_amount)
       const query = `
-      SELECT * FROM Pod_Lifetimes
+      SELECT *, 1 AS isActive 
+      FROM Pod_Lifetimes
       WHERE pod_id = ? AND start_date IS NOT NULL AND end_date IS NULL
       `
       dbConnection.getConnection((err, connection) => {
@@ -89,7 +90,8 @@ const fetchUnstartedLifetime = async(pod_id) => {
   return new Promise((resolve, reject) => {
     // Pod_Lifetimes(lifetime_id, start_date, pod_id, end_date, recurrence_rate, contribution_amount)
     const query = `
-      SELECT * FROM Pod_Lifetimes
+      SELECT *, 0 AS isActive
+      FROM Pod_Lifetimes
       WHERE pod_id = ? AND start_date IS NULL AND end_date IS NULL
       `
     dbConnection.getConnection((err, connection) => {

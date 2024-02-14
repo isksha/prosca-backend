@@ -69,13 +69,19 @@ router.get('/:podId', checkPodExists, async (req, res) => {
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
         if (activeLifetime === undefined) {
+            console.log('active');
             const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
-            foundPod.contributionAmt = unstartedLifetime.contribution_amount
+            foundPod.contributionAmt = unstartedLifetime.contribution_amount;
+            foundPod.isActive = unstartedLifetime.isActive;
+            foundPod.recurRate = unstartedLifetime.recurrence_rate;
             res.status(200).json(foundPod);
         } else {
-            foundPod.contributionAmt = activeLifetime.contribution_amount
-            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
-            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
+            console.log('inactive')
+            foundPod.contributionAmt = activeLifetime.contribution_amount;
+            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
+            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
+            foundPod.isActive = activeLifetime.isActive;
+            foundPod.recurRate = activeLifetime.recurrence_rate;
             res.status(200).json(foundPod);
         }
     } catch (err) {
@@ -130,6 +136,29 @@ router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
         res.status(404).json({error: `Error : ${err}` });
     }
 });
+
+// gets deposits and withdrawals for the pod for pod transaction history
+router.get('/totalcontributions/:podId/', checkPodExists, async(req, res) => {
+    const pod_id = req.params.podId;
+    try {
+        const transactions = await dao.getMemberContrAmounts(pod_id);
+        res.status(200).json({transactions});      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// gets deposits and withdrawals for the pod for pod transaction history
+router.get('/deposits/:podId/', checkPodExists, async(req, res) => {
+    const pod_id = req.params.podId;
+    try {
+        const transactions = await dao.getDepositsByPodId(pod_id);
+        res.status(200).json({transactions});      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
 
 // gets payout dates for users for current lifetime
 router.get('/payout_dates/:lifetime_id/', async(req, res) => {
