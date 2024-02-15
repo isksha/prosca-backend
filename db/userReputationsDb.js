@@ -7,11 +7,11 @@ const {dbConnection} = require("./dbConnection");
 const addUserReputation = async (user_id) => {
     return new Promise((resolve, reject) => {
         const query = `
-        INSERT INTO User_Reputations (user_id, peer_score) 
-        VALUES (?, ?)
+        INSERT INTO User_Reputations (user_id, peer_score_positive, peer_score_negative) 
+        VALUES (?, ?, ?)
         `
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [user_id, 0], (err, result) => {
+            connection.query(query, [user_id, 0, 0], (err, result) => {
                 if (err) {
                     reject(`Error in addUserReputation: cannot add deposit to Pod_Deposits table. ${err.message}`);
                 } else if (result.affectedRows === 0) {
@@ -30,16 +30,16 @@ const addUserReputation = async (user_id) => {
   returns: 1 on success, error message on error
 */
 const updateUserPeerReputation = async(user_id, update_type) => {
-    const increment_by = (update_type === "increment") ? 1 : -1;
+    const update_field = (update_type === "increment") ? "peer_score_positive" : "peer_score_negative";
 
     return new Promise((resolve, reject) => {
         const query = `
       UPDATE User_Reputations
-      SET peer_score = peer_score + ?
+      SET ${update_field} = ${update_field} + 1
       WHERE user_id = ?
       `
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [increment_by, user_id], (err, result) => {
+            connection.query(query, [user_id], (err, result) => {
                 if (err) {
                     reject(`Error in addUserReputation: ${err.message}`);
                 } else if (result.affectedRows === 0) {
