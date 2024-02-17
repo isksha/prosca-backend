@@ -59,6 +59,7 @@ const createConversation = async (conversation_id, recipient_user_id, recipient_
   }
 
 /*
+  Use this function to find the conversation between a user and another/pod
   parameters: senderID, recipent_userID, recipient_podID
   returns: row in Conversations table on success, error message on error
 */
@@ -88,6 +89,38 @@ const findConversationID = async (senderID, recipent_userID, recipient_podID) =>
       });
     });
   }
+
+  /*
+  Use this function to find the conversation ID of just a pod
+  parameters: senderID, recipent_userID, recipient_podID
+  returns: row in Conversations table on success, error message on error
+*/
+const findPodConversationID = async (recipient_podID) => {
+    
+  return new Promise((resolve, reject) => {
+   
+    const query = `
+    SELECT conversation_id FROM Conversations
+    WHERE recipient_pod_id = ?
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [recipient_podID], (err, data) => {
+        if (err) {
+          console.log("error: "+ err);
+          reject(`Error in findPodConversationID:${err.message}`);
+        } else if (data.length === 0) {
+          console.log("No conversations found")
+          resolve(null)
+        } else {
+          console.log("success in findPodConversationId")
+          resolve(data[0])
+        }
+        connection.release()
+      });    
+    });
+  });
+}
+
 
   /*
   parameters: senderID, recipent_userID, recipient_podID
@@ -148,6 +181,7 @@ const insertNewMessage = async (messageID, senderId, messageContent, sentDatetim
   module.exports = {
    createConversation,
    findConversationID,
+   findPodConversationID,
    findConversationMessages,
    insertNewMessage,
 };

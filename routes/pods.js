@@ -147,7 +147,7 @@ router.get('/payout_dates/:lifetime_id/', async(req, res) => {
 
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'pod_name=iskpod8&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&pod_size=3&recur_rate=weekly&contr_amount=50' http://localhost:3000/pods/
+// curl -i -X POST -d 'pod_name=Thebarbs2&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&pod_size=7&recur_rate=weekly&contr_amount=150' http://localhost:3000/pods/
 router.post('/', async (req, res) => {
     const generatedPodId = common.generateUniqueId();
     const podName = req.body.pod_name;
@@ -158,17 +158,25 @@ router.post('/', async (req, res) => {
     const podSize = req.body.pod_size;
 
     const generatedLifetimeId = common.generateUniqueId();
+    const convID = common.generateUniqueId();
     const recurrenceRate = req.body.recur_rate;
     const contributionAmount = req.body.contr_amount;
 
     try {
+        // create a new pod
         const newPod = await dao.addPod(generatedPodId, podName, podVisibility, podCreatorId, podCreationDate, podCode, podSize);
+        // add creator to pod and start a lifetime
         await dao.addUserToPod(podCreatorId, generatedPodId, podCreationDate)
         const lifetime = await dao.createLifetime(generatedLifetimeId, generatedPodId, recurrenceRate, contributionAmount)
+        // generate a conversation id for the pod
+        const createdConv = await dao.createConversation(convID,null,generatedPodId,podCreationDate);
+        if(createdConv){
+            await dao.insertNewMessage(common.generateUniqueId(),podCreatorId, 'New User added to pod', podCreationDate, convID);
+        }
         res.status(200).json( { pod_code : podCode } );
     } catch (err) {
         console.log(err)
-        res.status(401).json( { error: 'Failed in creating pod' } );
+        res.status(401).json( { error: 'Failed in creating pod:' + err } );
     }
 });
 
