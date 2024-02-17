@@ -300,7 +300,7 @@ router.post('/request_friendship', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=864a15ac-dc69-4d15-91ea-60be2688f1ef&userId=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&podCode=36270' http://localhost:3000/users/join_pod
+// curl -i -X POST -d 'podId=c91461be-3315-4459-be5c-4211ece2b97a&userId=14fed39c-5d6a-4eca-b2f2-f78f2f547b47&podCode=7IDXGssb7' http://localhost:3000/users/join_pod
 router.post('/join_pod', async (req, res) => {
     const podId = req.body.podId
     const userId = req.body.userId
@@ -319,6 +319,10 @@ router.post('/join_pod', async (req, res) => {
 
     try {
         const addedUserToPod = await dao.addUserToPod(userId, podId, dateJoined)
+        const foundConvId = await dao.findPodConversationID(podId);
+        if(foundConvId){
+            await dao.insertNewMessage(common.generateUniqueId(),userId, 'New User added to pod', dateJoined, foundConvId);
+        }
         if (addedUserToPod === 0) {
             res.status(401).json({ error: 'User already in pod' });
         } else {

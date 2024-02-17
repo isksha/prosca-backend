@@ -10,11 +10,6 @@ router.get('/', async (req, res) => {
     console.log("at chats home");
 
 });
-//TO BE COMPLETED:
-// When you create a group, a conversation ID is created in the bg
-// When you join a group, we look for the conversation id of that pod and you automatically send a message
-// to the group telling them you have joined
- 
 
 router.get('/user/:user_id', async (req, res) => {
     const userId = req.params.user_id;
