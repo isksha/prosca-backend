@@ -305,7 +305,7 @@ router.post('/join_pod', async (req, res) => {
     const podId = req.body.podId
     const userId = req.body.userId
     const dateJoined = common.getDate()
-    const podCode = parseInt(req.body.podCode)
+    const podCode = req.body.podCode
 
     // check if code matches for private pod
     try {
