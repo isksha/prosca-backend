@@ -3,5 +3,5 @@
 to run: 
 
 1. run `npm install`
-2. set the python interpreter to the one in the virtual environment (Navigate to the command palette and select the .venv interpreter)
+2. run `pip3 install -r requirements.txt`
 3. node `./bin/www`
