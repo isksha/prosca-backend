@@ -89,6 +89,17 @@ router.get('/:podId', checkPodExists, async (req, res) => {
     }
 });
 
+router.get('/get_by_code/:podCode', async (req, res) => {
+    const podCode = req.params.podCode;
+
+    try {
+        const foundPod = await dao.getPodByCode(podCode);
+        res.redirect(301, `/pods/${foundPod.pod_id}`)
+    } catch (err) {
+        res.status(404).json({ error: 'Could not pod by given code' })
+    }
+});
+
 // will search by pod name or any key word in the pod name
 // http://localhost:3000/pods/search/Finance students Pod
 router.get('/search/:podName', async (req, res) => {

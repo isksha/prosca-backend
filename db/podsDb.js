@@ -96,6 +96,35 @@ const getPod = async (pod_id) => {
   });
 };
 
+/*
+  parameters: pod_id
+  returns: row in Pods table on success, error message on error
+*/
+const getPodByCode = async (pod_code) => {
+  return new Promise((resolve, reject) => {
+    // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+    const query = `
+      SELECT * 
+      FROM Pods 
+      WHERE pod_code = ?
+    `;
+
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [pod_code], (err, data) => {
+        if (err) {
+          reject(`Error in getPodByCode: cannot get pod from Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getPodByCode: no rows in the Pods table matched pod_code: ${pod_code}.`);
+        } else {
+          resolve(data[0])
+        }
+        connection.release()
+      });
+    });
+    // closeConnection(connection)
+  });
+};
+
 /* 
   parameters: pod_name
   returns: row in Pods table on success, error message on error
@@ -159,6 +188,7 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date, pod_co
 module.exports = {
   getAllPods,
   getPod,
+  getPodByCode,
   addPod,
   getPodsByName,
   explorePublicPods
