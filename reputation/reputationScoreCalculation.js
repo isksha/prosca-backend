@@ -6,7 +6,7 @@ const runReputationScoreCalculation = async () => {
     const cron_schedule = '0 12 * * *';
 
     // run every day at 12 PM
-    // nodeCron.schedule(cron_schedule, async () => {
+    nodeCron.schedule(cron_schedule, async () => {
         // run python script to calculate reputation score
         exec(cmd, (err, stdout, stderr) => {
             if (err) {
@@ -19,7 +19,7 @@ const runReputationScoreCalculation = async () => {
             }
             console.log(`Reputation score calculation: ${stdout}`);
         });
-    // });
+    });
 
     return "Reputation score calculation has been scheduled";
 };
