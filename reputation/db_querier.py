@@ -43,13 +43,14 @@ def get_old_reputations(cursor):
         print("Error getting old reputations.")
         return pd.DataFrame()
 
-def store_new_reputations(cursor, new_rows):
+def store_new_reputations(conn, cursor, users_df):
     try:
-        # Execute an insert query
-        insert_query = """
-        INSERT INTO TESTING_TABLE (pod_id, reputation) VALUES (%s, %s)
-        """  # TODO: Change this to the actual table name
-        cursor.executemany(insert_query, new_rows)
+        new_rows = [tuple(data) for data in users_df.values]
+        update_query = """
+        UPDATE Users SET score = %s WHERE user_id = %s
+        """
+        cursor.executemany(update_query, new_rows)
+        conn.commit()
         print("New reputations stored.")
     except mysql.connector.Error as e:
         print("Error storing new reputations:", e)

@@ -6,6 +6,6 @@ conn, cursor = connect_to_database()
 
 users_df = db.get_old_reputations(cursor)
 reputations_df = ml.calculate_reputation(users_df)
-# db.store_new_reputations(cursor, new_rows)
+db.store_new_reputations(conn, cursor, reputations_df)
 
 close_connection(conn, cursor)

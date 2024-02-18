@@ -1,7 +1,7 @@
 const {v4: uuidv4} = require("uuid");
 const CryptoJS = require('crypto-js');
 
-const DEFAULT_USER_SCORE = 350
+const DEFAULT_USER_SCORE = 1
 const DEFAULT_WALLET_AMOUNT = 0
 
 const PRIVATE_VISIBILITY_STRING = 'private'

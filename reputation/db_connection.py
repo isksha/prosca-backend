@@ -27,7 +27,7 @@ def connect_to_database():
 
     except mysql.connector.Error as e:
         print("Error connecting to MySQL:", e)
-        return null, null
+        return None, None
 
     return conn, cursor
 
