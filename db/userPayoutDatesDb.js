@@ -50,7 +50,36 @@ const getPayoutDatesByLifetimeId = async (lifetime_id) => {
 
 }
 
+const getUpcomingPaymentsForUser = async (user_id) => {
+    return new Promise((resolve, reject) => {
+        const query = `
+      SELECT pl.contribution_amount, pd.payout_date, p.pod_name, p.pod_size, pl.start_date, pl.recurrence_rate
+      FROM User_Pods u
+      JOIN Pods p ON u.pod_id = p.pod_id
+      JOIN Pod_Lifetimes pl ON p.pod_id = pl.pod_id
+      JOIN User_Payout_Dates pd ON pd.lifetime_id = pl.lifetime_id
+      WHERE pd.payout_date > NOW() AND pl.start_date IS NOT NULL AND pl.end_date IS NULL AND u.user_id = ?
+      ORDER BY pd.payout_date
+    `;
+
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [user_id], (err, result) => {
+                if (err) {
+                    reject(`Error in getUpcomingPaymentsForUser: cannot get upcoming payments for userid: ${user_id}. ${err.message}`);
+                } else if (result.length === 0) {
+                    reject(`Error in getUpcomingPaymentsForUser: no rows were found for upcoming payments for userid: ${user_id}.`);
+                } else {
+                    resolve(result) // should return 1 on success
+                }
+                connection.release()
+            });
+        });
+    });
+
+}
+
 module.exports = {
     addPayoutDate,
-    getPayoutDatesByLifetimeId
+    getPayoutDatesByLifetimeId,
+    getUpcomingPaymentsForUser
 }

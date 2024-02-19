@@ -246,6 +246,69 @@ const getTransactionByPodId = async (pod_id) => {
     });
 }
 
+const getTransactionByUserId = async (user_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT
+            w.amount AS amnt,
+            w.transaction_date AS transac_date,
+            w.user_id AS u_id,
+            p.pod_name AS pod_name,
+            'withdrawal' AS transac_type
+        FROM Pod_Withdrawals w
+        JOIN Pods p ON p.pod_id = w.pod_id
+        WHERE w.user_id = ?
+        UNION
+        SELECT
+            d.amount AS amnt,
+            d.transaction_date AS transac_date,
+            d.user_id AS u_id,
+            p.pod_name AS pod_name,
+            'deposit' AS transac_type
+        FROM Pod_Deposits d
+        JOIN Pods p ON p.pod_id = d.pod_id
+        WHERE d.user_id = ?
+        ORDER BY transac_date DESC;
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [user_id, user_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getTransactionByUserId: cannot get transactions with specified id. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getTransactionByUserId: no rows in the Pod_Withdrawals join Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getAllTransactions = async () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+        SELECT * 
+        FROM Pod_Withdrawals 
+        JOIN Pod_Deposits 
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, (err, data) => {
+                if (err) {
+                    reject(`Error in getAllTransactions: cannot get withdrawals or deposits. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getAllTransactions: no rows in the Pod_Withdrawals join Pod_Depostis table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+};
+
 /********************************     Lifetimes *********************************** */
 
 /* 
@@ -298,5 +361,7 @@ module.exports = {
     getWithdrawalsByPodId,
     getDepositsByPodId,
     getTransactionByPodId,
-    getMemberContrAmounts
+    getMemberContrAmounts,
+    getTransactionByUserId,
+    getAllTransactions
 };

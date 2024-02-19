@@ -136,6 +136,42 @@ router.get('/get_reputation/:userId', checkUserExists, async (req, res) => {
     }
 });
 
+// gets transaction history for all pods user has participated in
+router.get('/myhistory/:userId/', checkUserExists, async(req, res) => {
+    const user_id = req.params.userId;
+    try {
+        const transactions = await dao.getTransactionByUserId(user_id);
+        res.status(200).json(transactions);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// gets all transactions
+router.get('/transactions/alltransactions/', async(req, res) => {
+    try {
+        const transactions = await dao.getAllTransactions();
+        res.status(200).json(transactions);
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// gets upcoming payments for active pods user is in
+router.get('/upcomingpayments/:userId/', checkUserExists, async(req, res) => {
+    const user_id = req.params.userId;
+    try {
+        const payments = await dao.getUpcomingPaymentsForUser(user_id);
+        get_curr_cycle = x => common.getCurrCycle(x['start_date'], x['recurrence_rate']);
+        new_payments = payments.map(old_dict => ({ ...old_dict, curr_cycle: get_curr_cycle(old_dict)}));
+        res.status(200).json(new_payments);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+
+
 // ********************************    POST routes *********************************** //
 
 // curl -i -X POST -d 'email=iska@isk.com&phone=2150000000&fname=Iskander&lname=Iskanderovic&nationalid=hello&dob=01-01-1990&passport=0001&country=CZ' http://localhost:3000/users
@@ -307,10 +343,10 @@ router.post('/join_pod', async (req, res) => {
     const dateJoined = common.getDate()
     const podCode = req.body.podCode
 
-    // check if code matches for private pod
+    // check if code matches for both private and public codes
     try {
         const foundPod = await dao.getPod(podId);
-        if (foundPod.visibility === common.PRIVATE_VISIBILITY_STRING && foundPod.pod_code !== podCode) {
+        if (foundPod.pod_code !== podCode) {
             return res.status(401).json({ error: 'Invalid pod invite code' });
         }
     } catch (err) {

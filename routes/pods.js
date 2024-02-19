@@ -188,6 +188,22 @@ router.get('/payout_dates/:lifetime_id/', async(req, res) => {
     }
 });
 
+// gets payout dates for users for current lifetime
+router.get('/lifetime/:lifetime_id/', async(req, res) => {
+    const lifetime_id = req.params.lifetime_id;
+
+    try {
+        const found_lifetime = await dao.getLifetime(lifetime_id);
+        if (found_lifetime) {
+            res.status(200).json({found_lifetime});
+        } else{
+            res.status(404).json({error: 'Could not find lifetime' });
+        }
+    } catch (err) {
+        res.status(401).json({ error: 'Could not get lifetime' })
+    }
+});
+
 // ********************************    POST routes *********************************** //
 
 // curl -i -X POST -d 'pod_name=Thebarbs2&visibility=private&pod_creator_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&pod_size=7&recur_rate=weekly&contr_amount=150' http://localhost:3000/pods/
