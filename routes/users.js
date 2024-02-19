@@ -207,7 +207,7 @@ router.post('/', async (req, res) => {
     try {
         const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
         const acct_link = await stripe.navigateToStripeAuth(account)
-        res.redirect(acct_link)
+        return res.status(200).json({ stripe_acct : acct_link })
     } catch (err) {
         // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
         res.status(401).json({ error: 'Failed to add user: Stripe API error' })
@@ -283,36 +283,6 @@ router.post('/withdraw', async (req, res) => {
         res.status(200).json(foundUser);
     } else {
         res.status(401).json({ error: 'User does not exist' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/cast_vote
-router.post('/cast_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/withdraw_vote
-router.post('/withdraw_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
     }
 });
 
