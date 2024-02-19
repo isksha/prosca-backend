@@ -171,7 +171,7 @@ router.post('/', async (req, res) => {
     try {
         const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
         const acct_link = await stripe.navigateToStripeAuth(account)
-        res.redirect(acct_link)
+        return res.status(200).json({ stripe_acct : acct_link })
     } catch (err) {
         // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
         res.status(401).json({ error: 'Failed to add user: Stripe API error' })
