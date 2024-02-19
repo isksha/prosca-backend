@@ -242,36 +242,6 @@ router.post('/create_lifetime', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/initiate_vote
-router.post('/initiate_vote', async(req, res) => {
-    const podId = req.body.podId
-    const voteId = req.body.voteId
-
-    const foundPod = await dao.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundPod);
-    } else {
-        res.status(401).json({ error: 'Failed to initiate vote' });
-    }
-});
-
-// curl -i -X POST -d 'podId=isk&voteId=12' http://localhost:3000/pods/accept_vote_decision
-router.post('/accept_vote_decision', async (req, res) => {
-    const podId = req.body.podId
-    const voteId = req.body.voteId
-
-    const foundPod = await dao.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json({podId, voteId});
-    } else {
-        res.status(401).json({ error: 'Failed to initiate vote' });
-    }
-});
-
 // ********************************  PUT routes *********************************** //
 
 // curl -i -X PUT http://localhost:3000/pods/isk

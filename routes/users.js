@@ -250,36 +250,6 @@ router.post('/withdraw', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/cast_vote
-router.post('/cast_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/withdraw_vote
-router.post('/withdraw_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
-    }
-});
-
 // curl -i -X POST -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&user2Id=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/request_friendship
 router.post('/request_friendship', async (req, res) => {
     const userId = req.body.userId
