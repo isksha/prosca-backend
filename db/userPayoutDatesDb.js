@@ -39,7 +39,7 @@ const getPayoutDatesByLifetimeId = async (lifetime_id) => {
                 if (err) {
                     reject(`Error in getPayoutDatesByLifetimeId: cannot get payout dates from User_Payout_Dates table. ${err.message}`);
                 } else if (result.length === 0) {
-                    reject(`Error in getPayoutDatesByLifetimeId: no rows were modified when getting payout dates from User_Payout_Dates table.`);
+                    reject(`Error in getPayoutDatesByLifetimeId: no rows were retrieved when getting payout dates from User_Payout_Dates table.`);
                 } else {
                     resolve(result) // should return 1 on success
                 }

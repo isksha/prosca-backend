@@ -180,11 +180,11 @@ router.get('/payout_dates/:lifetime_id/', async(req, res) => {
         if (found_lifetime) {
             const payouts = await dao.getPayoutDatesByLifetimeId(lifetime_id);
             res.status(200).json({payouts});
-        } else{
+        } else {
             res.status(404).json({error: 'Could not get associated lifetime' });
         }
     } catch (err) {
-        res.status(401).json({ error: 'Could not get payout dates' })
+        res.status(401).json({ error: `Could not get payout dates: ${err}` })
     }
 });
 
@@ -279,9 +279,9 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
     const lifetimeId = req.params.lifetimeId;
 
     try {
-        const lifetime = await dao.startLifetime(lifetimeId);
+        const update_lifetime = await dao.startLifetime(lifetimeId);
         // const lifetime = await dao.getLifetime('060fb2ff-0c43-4ef1-8578-b49b67f08a82') // await dao.getLifetime('060fb2ff-0c43-4ef1-8578-b49b67f08a82')
-
+        const lifetime = await dao.getLifetime(lifetimeId);
         // Schedule payments in Stripe API
         const associatedPodId = lifetime.pod_id
         const recurrenceRate = lifetime.recurrence_rate
