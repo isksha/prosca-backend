@@ -170,6 +170,16 @@ router.get('/upcomingpayments/:userId/', checkUserExists, async(req, res) => {
     }
 });
 
+// retrieves all rows in User_Stripe table
+router.get('/stripe/:userId', async(req, res) => {
+    try {
+        const allStripe = await dao.getAllStripeUsers();
+        res.status(200).json(allStripe);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
 
 
 // ********************************    POST routes *********************************** //
