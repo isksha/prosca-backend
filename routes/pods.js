@@ -74,6 +74,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             foundPod.contributionAmt = unstartedLifetime.contribution_amount;
             foundPod.isActive = unstartedLifetime.isActive;
             foundPod.recurrenceRate = unstartedLifetime.recurrence_rate;
+            foundPod.lifetimeId = unstartedLifetime.lifetime_id;
             res.status(200).json(foundPod);
         } else {
             console.log('inactive')
@@ -82,6 +83,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
             foundPod.isActive = activeLifetime.isActive;
             foundPod.recurrenceRate = activeLifetime.recurrence_rate;
+            foundPod.lifetimeId = unstartedLifetime.lifetime_id;
             res.status(200).json(foundPod);
         }
     } catch (err) {
