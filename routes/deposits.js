@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         const deposit = await dao.addDeposit(user, amt, pod);
         res.status(200).json(deposit);
     } catch (err) {
-        res.status(404).json({error: 'Withdrawal not posted'});
+        res.status(404).json({error: 'Deposit not posted'});
     }
 });
 
