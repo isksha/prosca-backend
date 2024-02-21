@@ -1,4 +1,5 @@
 const {dbConnection} = require("./dbConnection");
+const common = require('../common/commonFunctionalities');
 
 
 /*
@@ -52,7 +53,7 @@ const explorePublicPods = async () => {
     `;
 
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [PUBLIC_VISIBILITY_STRING], (err, data) => {
+      connection.query(query, [common.PUBLIC_VISIBILITY_STRING], (err, data) => {
         if (err) {
           reject(`Error in explorePublicPods: cannot get public pods. ${err.message}`);
         } else if (data.length === 0) {
@@ -138,12 +139,12 @@ const getPodsByName = async (pod_name) => {
     WHERE pod_name LIKE ? AND PL.end_date IS NULL)
     SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size, pod_code FROM pods_lifetimes
     JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
-    WHERE UP.date_left IS NULL
+    WHERE UP.date_left IS NULL AND Pods.visibility = ?
     GROUP BY pods_lifetimes.pod_id;
     `;
     const pod_name_new = '%' + pod_name + '%';
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [pod_name_new], (err, data) => {
+      connection.query(query, [pod_name_new, common.PUBLIC_VISIBILITY_STRING], (err, data) => {
         if (err) {
           reject(`Error in getPodsByName: cannot get pod from Pods table. ${err.message}`);
         } else if (data.length === 0) {
