@@ -136,10 +136,10 @@ const getPodsByName = async (pod_name) => {
     const query = `
     WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size, pod_code FROM Pods
     JOIN Pod_Lifetimes PL ON Pods.pod_id = PL.pod_id
-    WHERE pod_name LIKE ? AND PL.end_date IS NULL)
+    WHERE pod_name LIKE ? AND visibility = ? AND PL.end_date IS NULL)
     SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size, pod_code FROM pods_lifetimes
     JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
-    WHERE UP.date_left IS NULL AND Pods.visibility = ?
+    WHERE UP.date_left IS NULL
     GROUP BY pods_lifetimes.pod_id;
     `;
     const pod_name_new = '%' + pod_name + '%';
