@@ -59,7 +59,7 @@ def store_new_reputations(conn, cursor, users_df):
 def _get_peer_reviews(cursor, user_id):
     try:
         select_query = f"""
-        SELECT peer_score_positive, peer_score_negative FROM User_Reputations WHERE user_id = '{user_id}'
+        SELECT peer_score_positive, peer_score_negative FROM User_Profiles WHERE user_id = '{user_id}'
         """
         cursor.execute(select_query)
         rows = cursor.fetchall()
