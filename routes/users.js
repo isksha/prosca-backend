@@ -4,6 +4,7 @@ const router = express.Router();
 const common = require('../common/commonFunctionalities');
 const dao = require('../db/dataAccessor');
 const stripe = require('../payments/stripe');
+const s3 = require('../db/s3querier');
 
 // *****************************  Internal helpers *********************************** //
 
@@ -36,7 +37,12 @@ router.get('/', async (req, res) => {
     } catch (err) {
         res.status(404).json({error: 'No users found' });
     }
+});
 
+router.get('/user_profile/:userId', checkUserExists, async (req, res) => {
+    const foundUserProfile = await dao.getUserProfileById(req.foundUser.user_id);
+    const mergedUser = { ...req.foundUser, ...foundUserProfile };
+    res.status(200).json(mergedUser);
 });
 
 // will search by first name, last name or both
@@ -126,16 +132,6 @@ router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-router.get('/get_reputation/:userId', checkUserExists, async (req, res) => {
-    try {
-        const foundReputation = await dao.getUserReputationById(req.foundUser.user_id);
-        res.status(200).json(foundReputation)
-    } catch (err) {
-        console.log(err)
-        res.status(404).json({ error: `Could not increment reputation for user` })
-    }
-});
-
 // gets transaction history for all pods user has participated in
 router.get('/myhistory/:userId/', checkUserExists, async(req, res) => {
     const user_id = req.params.userId;
@@ -180,7 +176,17 @@ router.get('/stripe/:userId', async(req, res) => {
     }
 });
 
+router.get('/profile_picture/:userId', async(req, res) => {
+    const user_id = req.params.userId;
 
+    try {
+        const profile_pic = await s3.retrieveProfilePicture(user_id);
+        res.writeHead(200, {'Content-Type' : 'image/jpeg; charset=UTF-8'})
+        profile_pic.Body.pipe(res);
+    } catch (err) {
+        res.status(404).json({ error: "Could not load profile picture" });
+    }
+});
 
 // ********************************    POST routes *********************************** //
 
@@ -209,7 +215,7 @@ router.post('/', async (req, res) => {
 
     try {
         await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
-        await dao.addUserReputation(userId)
+        await dao.addUserProfile(userId)
     } catch (err) {
         return res.status(401).json({ error: 'Failed to add user' })
     }
@@ -367,6 +373,33 @@ router.post('/issue_stripe_payout', async (req, res) => {
     }
 });
 
+// CALL THIS TO BOTH UPLOAD AND UPDATE PROFILE PICTURE
+// curl -X POST -H "Content-Type: application/json" -d '{"userId" : "14fed39c-5d6a-4eca-b2f2-f78f2f547b47", "profilePic" : ""}' http://localhost:3000/users/user_profile_picture
+router.post('/user_profile_picture', async(req, res) => {
+    const user_id = req.body.userId;
+    const profile_pic = req.body.profilePic;
+
+    try {
+        await s3.storeProfilePicture(user_id, profile_pic);
+        res.status(200).json({success: `Profile picture stored` });
+    } catch (err) {
+        res.status(404).json({error: `Could not upload profile picture` });
+    }
+});
+
+// curl -i -X POST -d 'userId=f62ae581-a33f-480d-a015-d538b968db1a&bio=Hello World!\n My name is Alex...\n I like salami :>' http://localhost:3000/users/post_user_bio
+router.post('/post_user_bio', async(req, res) => {
+    const user_id = req.body.userId;
+    const user_bio = req.body.bio;
+
+    try {
+        await dao.updateUserProfileBio(user_id, user_bio);
+        res.status(200).json({success: `User bio updated` });
+    } catch (err) {
+        res.status(404).json({error: `Could not update user bio` });
+    }
+});
+
 // ********************************     PUT routes *********************************** //
 
 // curl -i -X PUT http://localhost:3000/users/isk
@@ -462,7 +495,6 @@ router.delete('/end_friendship/', async (req, res) => {
     } else{
         res.status(401).json({ error: `User ${userId} does not exist !` });
     }
-
 })
 
 module.exports = router;

@@ -10,6 +10,9 @@ const PUBLIC_VISIBILITY_STRING = 'public'
 const DEPOSIT_TYPE_STRING = 'deposit'
 const WITHDRAWAL_TYPE_STRING = 'withdrawal'
 
+const S3_BUCKET_NAME = 'prosca-profile-pics'
+const AWS_REGION = 'us-east-1'
+
 // ------------------------------------ CODE GENERATION ------------------------------------ //
 
 function generateUniqueId() {
@@ -105,6 +108,8 @@ module.exports = {
     PUBLIC_VISIBILITY_STRING,
     DEPOSIT_TYPE_STRING,
     WITHDRAWAL_TYPE_STRING,
+    S3_BUCKET_NAME,
+    AWS_REGION,
     generateUniqueId,
     getDate,
     generateSHA256Hash,
