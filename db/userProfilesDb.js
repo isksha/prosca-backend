@@ -4,18 +4,18 @@ const {dbConnection} = require("./dbConnection");
   parameters: user_id
   returns: 1 on success, error message on error
 */
-const addUserReputation = async (user_id) => {
+const addUserProfile = async (user_id) => {
     return new Promise((resolve, reject) => {
         const query = `
-        INSERT INTO User_Profiles (user_id, peer_score_positive, peer_score_negative) 
-        VALUES (?, ?, ?)
+        INSERT INTO User_Profiles (user_id, peer_score_positive, peer_score_negative, user_bio) 
+        VALUES (?, ?, ?, ?)
         `
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [user_id, 0, 0], (err, result) => {
+            connection.query(query, [user_id, 0, 0, null], (err, result) => {
                 if (err) {
-                    reject(`Error in addUserReputation: cannot add deposit to Pod_Deposits table. ${err.message}`);
+                    reject(`Error in addUserProfile: cannot add user profile to User_Profiles table. ${err.message}`);
                 } else if (result.affectedRows === 0) {
-                    reject(`Error in addUserReputation: no rows were modified when adding user to Pod_Deposits table.`);
+                    reject(`Error in addUserProfile: no rows were modified when adding user profile to User_Profiles table.`);
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
@@ -41,12 +41,35 @@ const updateUserPeerReputation = async(user_id, update_type) => {
         dbConnection.getConnection((err, connection) => {
             connection.query(query, [user_id], (err, result) => {
                 if (err) {
-                    reject(`Error in addUserReputation: ${err.message}`);
+                    reject(`Error in updateUserReputation: ${err.message}`);
                 } else if (result.affectedRows === 0) {
-                    reject(`
-              Error in addUserReputation: no rows were modified when accepting request from 
-              user_id:${user_id}, to user_id:${friend_id} from User_Profiles table.
-              `);
+                    reject(`Error in updateUserReputation: no rows were modified.`);
+                } else {
+                    resolve(result.affectedRows) // should return 1 on success
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+/*
+  parameters: user_id, new_bio
+  returns: 1 on success, error message on error
+*/
+const updateUserProfileBio = async(user_id, new_bio) => {
+    return new Promise((resolve, reject) => {
+        const query = `
+      UPDATE User_Profiles
+      SET user_bio = ?
+      WHERE user_id = ?
+      `
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [new_bio, user_id], (err, result) => {
+                if (err) {
+                    reject(`Error in updateUserProfileBio: ${err.message}`);
+                } else if (result.affectedRows === 0) {
+                    reject(`Error in updateUserProfileBio: no rows were modified`);
                 } else {
                     resolve(result.affectedRows) // should return 1 on success
                 }
@@ -60,7 +83,7 @@ const updateUserPeerReputation = async(user_id, update_type) => {
   parameters: user_id
   returns: row in User_Profiles table on success, error message on error
 */
-const getUserReputationById = async (user_id) => {
+const getUserProfileById = async (user_id) => {
     return new Promise((resolve, reject) => {
         /*
           User_Profiles (user_id, peer_score)
@@ -73,9 +96,9 @@ const getUserReputationById = async (user_id) => {
         dbConnection.getConnection((err, connection) => {
             connection.query(query, [user_id], (err, data) => {
                 if (err) {
-                    reject(`Error in getUserReputationById: cannot get user from Users table. ${err.message}`);
+                    reject(`Error in getUserProfileById: cannot get user from Users_Profiles table. ${err.message}`);
                 } else if (data.length === 0) {
-                    reject(`Error in getUserReputationById: no rows in the Users table matched user_id: ${user_id}.`);
+                    reject(`Error in getUserProfileById: no rows in the User_Profiles table matched user_id: ${user_id}.`);
                 } else {
                     resolve(data[0])
                 }
@@ -86,7 +109,8 @@ const getUserReputationById = async (user_id) => {
 }
 
 module.exports = {
-    addUserReputation,
+    addUserProfile,
     updateUserPeerReputation,
-    getUserReputationById
+    updateUserProfileBio,
+    getUserProfileById
 };
