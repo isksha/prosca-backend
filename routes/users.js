@@ -247,20 +247,6 @@ router.post('/authenticate', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk' http://localhost:3000/users/update_reputation
-router.post('/update_reputation', async (req, res) => {
-    const userId = req.body.userId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to calculate reputation' });
-    }
-});
-
 // curl -i -X POST -d 'userId=4605edcc-98e6-4548-8ea6-05cce6aeb619' http://localhost:3000/users/increment_peer_review
 router.post('/increment_peer_review', async (req, res) => {
     const userId = req.body.userId
