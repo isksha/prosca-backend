@@ -6,6 +6,8 @@ const {dbConnection} = require("./dbConnection");
 */
 const createConversation = async (conversation_id, recipient_user_id, recipient_pod_id, dateJoined) => {
     console.log("in create Conversations");
+    console.log(recipient_pod_id);
+    console.log(recipient_user_id);
     if(!recipient_user_id){
         return new Promise((resolve, reject) => {
             /*
@@ -152,6 +154,71 @@ const findConversationMessages = async (conversationID) => {
     });
   }
 
+   /* TODO 
+  parameters: senderID, recipent_userID, recipient_podID
+  returns: row in Conversations table on success, error message on error
+*/
+const findGroupConversations = async (user_id) => {
+  return new Promise((resolve, reject) => {
+    
+    const query = `
+    WITH Pod_convos AS(
+      SELECT C.conversation_id, recipient_pod_id,joined_datetime FROM Conversations C
+      JOIN Messages M on C.conversation_id = M.conversation_id
+      WHERE M.from_user_id = ? AND recipient_pod_id IS NOT NULL
+      GROUP BY C.conversation_id, recipient_pod_id, joined_datetime)
+      SELECT joined_datetime, recipient_pod_id,pod_name AS conversation_name, NULL AS recipient_user_id FROM Pod_convos PC
+      JOIN Pods P ON P.pod_id = PC.recipient_pod_id
+      ORDER BY joined_datetime DESC;
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id], (err, data) => {
+        if (err) {
+          console.log("error")
+          reject(`Error in findGroupConversations:${err.message}`);
+        } else if (data.length === 0) {
+          console.log("No group conversations found")
+          resolve([])
+        } else {
+          console.log("success")
+          resolve(data)
+        }
+        connection.release()
+      });    
+    });
+  });
+}
+
+const  findOneonOneConversations = async (user_id) => {
+  return new Promise((resolve, reject) => {
+    
+    const query = `
+    WITH individual_convos AS(SELECT C.conversation_id, from_user_id, recipient_user_id,joined_datetime FROM Conversations C
+      JOIN Messages M on C.conversation_id = M.conversation_id
+      WHERE (M.from_user_id =? OR recipient_user_id= ?) AND recipient_pod_id IS NULL
+      GROUP BY C.conversation_id,from_user_id, recipient_pod_id, joined_datetime),
+      extract_receivers AS(SELECT IF(from_user_id = 'aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94', recipient_user_id, from_user_id) AS receiver_id,conversation_id,joined_datetime FROM individual_convos)
+      SELECT  joined_datetime, NULL AS recipient_pod_id, receiver_id AS recipient_user_id, first_name, last_name FROM extract_receivers ER
+      JOIN Users U ON U.user_id = ER.receiver_id
+      ORDER BY joined_datetime DESC;
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id, user_id], (err, data) => {
+        if (err) {
+          console.log("error")
+          reject(`Error in onOneConversations:${err.message}`);
+        } else if (data.length === 0) {
+          console.log("No one on one conversations found")
+          resolve([])
+        } else {
+          console.log("success")
+          resolve(data)
+        }
+        connection.release()
+      });    
+    });
+  });
+}
 
 const insertNewMessage = async (messageID, senderId, messageContent, sentDatetime,conversationID) => {
   return new Promise((resolve, reject) => {
@@ -184,4 +251,6 @@ const insertNewMessage = async (messageID, senderId, messageContent, sentDatetim
    findPodConversationID,
    findConversationMessages,
    insertNewMessage,
+   findGroupConversations,
+   findOneonOneConversations,
 };

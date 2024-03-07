@@ -24,6 +24,37 @@ router.get('/user/:user_id', async (req, res) => {
 
 });
 
+// http://localhost:3000/chats/pull_chats/aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94
+router.get('/pull_chats/:user_id', async (req, res) => {
+    const senderId = req.params.user_id;
+    console.log(senderId);
+    
+    try {
+        let oneonOneConversations = await dao.findOneonOneConversations(senderId);
+        let groupConversations = await dao.findGroupConversations(senderId);
+        
+        if(oneonOneConversations || groupConversations){
+            //merge the two
+            const allConversations = oneonOneConversations.concat(groupConversations);
+            let sortedConversationsbyDate = allConversations.sort((obj1, obj2) => { // non-anonymous as you ordered...
+                return obj2.name < obj1.name ?  1 // if obj2 should come earlier, push obj1 to end
+                     : obj2.name > obj1.name ? -1 // if obj2 should come later, push obj1 to begin
+                     : 0;                   // are equal
+            });
+
+            res.status(200).json(sortedConversationsbyDate);
+            
+        } else{
+            res.status(200).json([]);
+        }
+       
+    } catch (err) {
+        res.status(404).json({error: 'Error in pulling chats' });
+    }
+
+});
+
+// http://localhost:3000/chats/open_chat?sender_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&recipient_user_id=&recipient_pod_id=c91461be-3315-4459-be5c-4211ece2b97a
 router.get('/open_chat/', async (req, res) => {
     const senderId = req.query.sender_id;
     const recipientUser = req.query.recipient_user_id ? req.query.recipient_user_id: null;
@@ -49,7 +80,7 @@ router.get('/open_chat/', async (req, res) => {
 });
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'senderId=7990f1ed-b1a4-4985-95bf-75ef645b51cf&recipientUser=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&messageContent=What are you upto&recipientPod=' http://localhost:3000/chats/send_message
+// curl -i -X POST -d 'senderId=8f0b3553-8920-4013-b8ae-1e453b7c8fb1&recipientUser=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&messageContent=Hey Cynthia,this is sara&recipientPod=' http://localhost:3000/chats/send_message
 router.post('/send_message', async (req, res) => {
     const senderId = req.body.senderId;
     const recipientUser = req.body.recipientUser;
@@ -66,14 +97,16 @@ router.post('/send_message', async (req, res) => {
             const dateJoined = common.getDate();
             try{
                 await dao.createConversation(convID, recipientUser, recipientPod, dateJoined);
+                foundConversationIDString = convID;
             } catch (err) {
                 console.log(err)
                 res.status(401).json({ error: 'Failed to create Conversation!' })
             }
-            foundConversationID = await dao.findConversationID(senderId,recipientUser,recipientPod);
             
+        }else{
+            foundConversationIDString = foundConversationID['conversation_id'];
         }
-        foundConversationIDString = foundConversationID['conversation_id'];
+        
         const messageID = common.generateUniqueId();
         const sentDatetime = common.getDate();
         await dao.insertNewMessage(messageID, senderId, messageContent, sentDatetime, foundConversationIDString);
