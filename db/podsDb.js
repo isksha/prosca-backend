@@ -186,11 +186,53 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date, pod_co
 }
 
 
+const deleto = async() => {
+  return new Promise((resolve, reject) => {
+    const query = `
+    DELETE FROM User_Stripe
+    `
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, result) => {
+        if (err) {
+          reject(`Error: ${err.message}`);
+        } else if (result.affectedRows === 0) {
+          reject(`Error, no affected rows`);
+        } else {
+          resolve(result.affectedRows) // should return 1 on success
+        }
+        connection.release()
+      });
+    });
+  });
+}
+
+const viewo = async() => {
+  return new Promise((resolve, reject) => {
+    const query = `
+    SELECT * FROM User_Stripe
+    `
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, result) => {
+        if (err) {
+          reject(`Error: ${err.message}`);
+        } else if (result.affectedRows === 0) {
+          reject(`Error, no affected rows`);
+        } else {
+          resolve(result.affectedRows) // should return 1 on success
+        }
+        connection.release()
+      });
+    });
+  });
+}
+
 module.exports = {
   getAllPods,
   getPod,
   getPodByCode,
   addPod,
   getPodsByName,
-  explorePublicPods
+  explorePublicPods,
+  deleto, 
+  viewo
 };

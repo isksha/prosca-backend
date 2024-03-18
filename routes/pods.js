@@ -352,4 +352,26 @@ router.delete('/end_lifetime', async (req, res) => {
     }
 });
 
+// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/hehehe
+router.delete('/hehehe', async (req, res) => {
+    // const podId = req.body.podId
+
+    try {
+        const activeLifetime = await dao.deleto();
+    } catch (err) {
+        console.log(err)
+        res.status(401).json( { error: 'Failed in deleting all rows' } );
+    }
+});
+
+router.get('/hohoho', async (req, res) => {
+
+    try {
+        const foundPod = await dao.viewo();
+    } catch (err) {
+        console.log(err)
+        res.status(404).json({ error: 'Failed in retrieving all rows' })
+    }
+});
+
 module.exports = router;
