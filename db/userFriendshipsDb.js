@@ -13,7 +13,7 @@ const getPendingFriendshipRequests = async (user_id) => {
       const query = `
       SELECT * 
       FROM User_Friendships 
-      WHERE friend_id = ? AND status = 'pending'
+      WHERE user_id = ? AND status = 'pending'
       `;
       dbConnection.getConnection((err, connection) => {
         connection.query(query, [user_id], (err, data) => {
