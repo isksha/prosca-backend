@@ -184,11 +184,41 @@ const endFriendship = async(user_id, friend_id) => {
     });
 }
 
+/* 
+  parameters: none
+  returns: entire users table on success, error message on error/when no users exist
+*/
+const getAllFriendships = async () => {
+  return new Promise((resolve, reject) => {
+    /*
+      Users (user_id, first_name, last_name, phone, email_address, 
+      user_password, date_of_birth, score, national_id, country, wallet_amount)
+    */
+    const query = `
+      SELECT * 
+      FROM User_Friendships 
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, data) => {
+        if (err) {
+          reject(`Error in getAllFriendships: cannot get users from User_Friendships table. ${err}`);
+        } else if (data.length === 0) {
+          reject(`Error in getAllFriendships: no rows in the User_Friendships table.`);
+        } else {
+          resolve(data)
+        }
+        connection.release()
+      });  
+    });
+  });
+};
+
 module.exports = {
   getPendingFriendshipRequests,
   postFriendRequest,
   acceptFriendRequest,
   endFriendship,
   getUsersFriends,
-  getFriendRecommendations
+  getFriendRecommendations,
+  getAllFriendships
 };

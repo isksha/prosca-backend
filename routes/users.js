@@ -65,6 +65,24 @@ router.get('/:userName', async (req, res) => {
     
 });
 
+router.get('/getAllFriends', async (req, res) => {
+    
+    try {
+        const foundUsers = await dao.getAllFriendships();
+        if(foundUsers){
+            console.log(foundUsers)
+            res.status(200).json(foundUsers);
+        }else{
+            console.log('not found users')
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+            res.status(404).json({error: `Error : ${err}` });
+    }
+    
+});
+
 // http://localhost:3000/users/search_friends/username
 router.get('/search_friends/:userName', checkUserExists,async (req, res) => {
     const userName = req.params.userName? req.params.userName : "";
