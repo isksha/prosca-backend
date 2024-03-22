@@ -89,23 +89,22 @@ router.get('/search_friends/:userName', checkUserExists,async (req, res) => {
     }
 });
 
-// http://localhost:3000/users/recommend_friends/username
-router.get('/recommend_friends/:userName', checkUserExists,async (req, res) => {
-    const userName = req.params.userName? req.params.userName : "";
+// http://localhost:3000/users/recommend_friends/userId
+router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
+    const userId = req.params.userId? req.params.userId : "";
     try {
-        const foundUsers = await dao.getUsersByName(userName);
-        if (foundUsers) {
-            const foundUsersLimitedInfo = foundUsers.map(user => {
-                return {
-                    user_id: user.user_id,
-                    first_name: user.first_name, 
-                    last_name: user.last_name,
-                    score: user.score,
-                };
-            });
-            res.status(200).json(foundUsersLimitedInfo);
+        const foundFriends = await dao.getFriendRecommendations(userId);
+        if (foundFriends) {
+            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsInfo = await Promise.all(
+                friendsUserIds.map(async uid => {
+                    if (uid !== userId) { // don't return self as friend
+                        return await dao.getUserById(uid);
+                    }
+                })).flat();
+            res.status(200).json(friendsInfo);
         } else {
-            res.status(404).json({error: 'No users found with given name' });
+            res.status(404).json({error: 'recommend_friends route: no users found with given name in userFriendships table' });
         }
             
     } catch (err) {
@@ -140,7 +139,7 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
 
 // http://localhost:3000/users/get_requests/thisismyuserid
 router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
-    const firstName = req.params.userId
+    const userId = req.params.userId
     try {
         const foundRequests = await dao.getPendingFriendshipRequests(userId);
         if (foundRequests) {
