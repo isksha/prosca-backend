@@ -1,7 +1,7 @@
 const {v4: uuidv4} = require("uuid");
 const CryptoJS = require('crypto-js');
 
-const DEFAULT_USER_SCORE = 350
+const DEFAULT_USER_SCORE = 1
 const DEFAULT_WALLET_AMOUNT = 0
 
 const PRIVATE_VISIBILITY_STRING = 'private'
@@ -9,6 +9,9 @@ const PUBLIC_VISIBILITY_STRING = 'public'
 
 const DEPOSIT_TYPE_STRING = 'deposit'
 const WITHDRAWAL_TYPE_STRING = 'withdrawal'
+
+const S3_BUCKET_NAME = 'prosca-profile-pics'
+const AWS_REGION = 'us-east-1'
 
 // ------------------------------------ CODE GENERATION ------------------------------------ //
 
@@ -105,6 +108,8 @@ module.exports = {
     PUBLIC_VISIBILITY_STRING,
     DEPOSIT_TYPE_STRING,
     WITHDRAWAL_TYPE_STRING,
+    S3_BUCKET_NAME,
+    AWS_REGION,
     generateUniqueId,
     getDate,
     generateSHA256Hash,

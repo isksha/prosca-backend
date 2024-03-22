@@ -4,6 +4,7 @@ const router = express.Router();
 const common = require('../common/commonFunctionalities');
 const dao = require('../db/dataAccessor');
 const stripe = require('../payments/stripe');
+const s3 = require('../db/s3querier');
 
 // *****************************  Internal helpers *********************************** //
 
@@ -18,6 +19,15 @@ const checkUserExists = async (req, res, next) => {
     }
 };
 
+const conductPeerReviewUpdate = async (user_id, command_str) => {
+    try {
+        await dao.getUserById(user_id);
+    } catch (err) {
+        return res.status(404).json({ error: 'UNF' });
+    }
+    await dao.updateUserPeerReputation(user_id, command_str);
+};
+
 // ********************************     GET routes *********************************** //
 
 router.get('/', async (req, res) => {
@@ -27,7 +37,12 @@ router.get('/', async (req, res) => {
     } catch (err) {
         res.status(404).json({error: 'No users found' });
     }
+});
 
+router.get('/user_profile/:userId', checkUserExists, async (req, res) => {
+    const foundUserProfile = await dao.getUserProfileById(req.foundUser.user_id);
+    const mergedUser = { ...req.foundUser, ...foundUserProfile };
+    res.status(200).json(mergedUser);
 });
 
 // will search by first name, last name or both
@@ -50,8 +65,26 @@ router.get('/:userName', async (req, res) => {
     
 });
 
-// http://localhost:3000/users/suggest_friends/username
-router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
+router.get('/getAllFriends', async (req, res) => {
+    
+    try {
+        const foundUsers = await dao.getAllFriendships();
+        if(foundUsers){
+            console.log(foundUsers)
+            res.status(200).json(foundUsers);
+        }else{
+            console.log('not found users')
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+            res.status(404).json({error: `Error : ${err}` });
+    }
+    
+});
+
+// http://localhost:3000/users/search_friends/username
+router.get('/search_friends/:userName', checkUserExists,async (req, res) => {
     const userName = req.params.userName? req.params.userName : "";
     try {
         const foundUsers = await dao.getUsersByName(userName);
@@ -74,15 +107,49 @@ router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
     }
 });
 
-http://localhost:3000/users/get_friends/thisismyuserid
-router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
-    const userId = req.params.userId;
-
+// http://localhost:3000/users/recommend_friends/userId
+router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
+    const userId = req.params.userId? req.params.userId : "";
     try {
-        const foundUser = await dao.getUserById(userId);
-        res.status(200).json(foundUser);
+        const foundFriends = await dao.getFriendRecommendations(userId);
+        if (foundFriends) {
+            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsInfo = await Promise.all(
+                friendsUserIds.map(async uid => {
+                    if (uid !== userId) { // don't return self as friend
+                        return await dao.getUserById(uid);
+                    }
+                })).flat();
+            res.status(200).json(friendsInfo);
+        } else {
+            res.status(404).json({error: 'recommend_friends route: no users found with given name in userFriendships table' });
+        }
+            
     } catch (err) {
-        res.status(404).json({ error: `Could not get user with id ${userId}` })
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// http://localhost:3000/users/get_friends/thisismyuserid
+router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
+    const userId = req.params.userId? req.params.userId : "";
+    try {
+        const foundFriends = await dao.getUsersFriends(userId);
+        if (foundFriends) {
+            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsInfo = await Promise.all(
+                friendsUserIds.map(async uid => {
+                    if (uid !== userId) { // don't return self as friend
+                        return await dao.getUserById(uid);
+                    }
+                })).flat();
+            res.status(200).json(friendsInfo);
+        } else {
+            res.status(404).json({error: 'get_friends route: no users found with given name in userFriendships table' });
+        }
+            
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
     }
 });
 
@@ -105,8 +172,6 @@ router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-
-
 router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     const foundUser = req.foundUser;
     const userId = req.params.userId;
@@ -119,8 +184,61 @@ router.get('/get_pods/:userId', checkUserExists,async (req, res) => {
     }
 });
 
+// gets transaction history for all pods user has participated in
+router.get('/myhistory/:userId/', checkUserExists, async(req, res) => {
+    const user_id = req.params.userId;
+    try {
+        const transactions = await dao.getTransactionByUserId(user_id);
+        res.status(200).json(transactions);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
 
+// gets all transactions
+router.get('/transactions/alltransactions/', async(req, res) => {
+    try {
+        const transactions = await dao.getAllTransactions();
+        res.status(200).json(transactions);
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
 
+// gets upcoming payments for active pods user is in
+router.get('/upcomingpayments/:userId/', checkUserExists, async(req, res) => {
+    const user_id = req.params.userId;
+    try {
+        const payments = await dao.getUpcomingPaymentsForUser(user_id);
+        get_curr_cycle = x => common.getCurrCycle(x['start_date'], x['recurrence_rate']);
+        new_payments = payments.map(old_dict => ({ ...old_dict, curr_cycle: get_curr_cycle(old_dict)}));
+        res.status(200).json(new_payments);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// retrieves all rows in User_Stripe table
+router.get('/stripe/:userId', async(req, res) => {
+    try {
+        const allStripe = await dao.getAllStripeUsers();
+        res.status(200).json(allStripe);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+router.get('/profile_picture/:userId', async(req, res) => {
+    const user_id = req.params.userId;
+
+    try {
+        const profile_pic = await s3.retrieveProfilePicture(user_id);
+        res.writeHead(200, {'Content-Type' : 'image/jpeg; charset=UTF-8'})
+        profile_pic.Body.pipe(res);
+    } catch (err) {
+        res.status(404).json({ error: "Could not load profile picture" });
+    }
+});
 
 // ********************************    POST routes *********************************** //
 
@@ -149,6 +267,7 @@ router.post('/', async (req, res) => {
 
     try {
         await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
+        await dao.addUserProfile(userId)
     } catch (err) {
         return res.status(401).json({ error: 'Failed to add user' })
     }
@@ -156,7 +275,7 @@ router.post('/', async (req, res) => {
     try {
         const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
         const acct_link = await stripe.navigateToStripeAuth(account)
-        res.redirect(acct_link)
+        return res.status(200).json({ stripe_acct : acct_link })
     } catch (err) {
         // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
         res.status(401).json({ error: 'Failed to add user: Stripe API error' })
@@ -180,17 +299,29 @@ router.post('/authenticate', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'userId=isk' http://localhost:3000/users/update_reputation
-router.post('/update_reputation', async (req, res) => {
+// curl -i -X POST -d 'userId=4605edcc-98e6-4548-8ea6-05cce6aeb619' http://localhost:3000/users/increment_peer_review
+router.post('/increment_peer_review', async (req, res) => {
     const userId = req.body.userId
 
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls
+    try {
+        await conductPeerReviewUpdate(userId, "increment");
+        res.status(200).json({ success : 'Incremented reputation successfully' });
+    } catch (err) {
+        res.status(401).json({ error: 'Failed to increment reputation' });
+    }
+});
 
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to calculate reputation' });
+
+// curl -i -X POST -d 'userId=4605edcc-98e6-4548-8ea6-05cce6aeb619' http://localhost:3000/users/decrement_peer_review
+router.post('/decrement_peer_review', async (req, res) => {
+    const userId = req.body.userId
+
+    try {
+        await conductPeerReviewUpdate(userId, "decrement");
+        res.status(200).json({ success : 'Decremented reputation successfully' });
+    } catch (err) {
+        console.log(err)
+        res.status(401).json({ error: 'Failed to decrement reputation' });
     }
 });
 
@@ -206,36 +337,6 @@ router.post('/withdraw', async (req, res) => {
         res.status(200).json(foundUser);
     } else {
         res.status(401).json({ error: 'User does not exist' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/cast_vote
-router.post('/cast_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
-    }
-});
-
-// curl -i -X POST -d 'userId=isk&voteId=sss' http://localhost:3000/users/withdraw_vote
-router.post('/withdraw_vote', async (req, res) => {
-    const userId = req.body.userId
-    const voteId = req.body.voteId
-
-    const foundUser = await dao.getUserById(userId);
-    if (foundUser) {
-        // TODO: replace with DB calls, possibly other route calls
-
-        res.status(200).json(foundUser);
-    } else {
-        res.status(401).json({ error: 'Failed to cast vote' });
     }
 });
 
@@ -266,10 +367,10 @@ router.post('/join_pod', async (req, res) => {
     const dateJoined = common.getDate()
     const podCode = req.body.podCode
 
-    // check if code matches for private pod
+    // check if code matches for both private and public codes
     try {
         const foundPod = await dao.getPod(podId);
-        if (foundPod.visibility === common.PRIVATE_VISIBILITY_STRING && foundPod.pod_code !== podCode) {
+        if (foundPod.pod_code !== podCode) {
             return res.status(401).json({ error: 'Invalid pod invite code' });
         }
     } catch (err) {
@@ -307,6 +408,33 @@ router.post('/issue_stripe_payout', async (req, res) => {
         res.status(200).json({ success: 'Payout successful' });
     } catch (e) {
         res.status(401).json({ error: 'Failed to issue payout' });
+    }
+});
+
+// CALL THIS TO BOTH UPLOAD AND UPDATE PROFILE PICTURE
+// curl -X POST -H "Content-Type: application/json" -d '{"userId" : "14fed39c-5d6a-4eca-b2f2-f78f2f547b47", "profilePic" : ""}' http://localhost:3000/users/user_profile_picture
+router.post('/user_profile_picture', async(req, res) => {
+    const user_id = req.body.userId;
+    const profile_pic = req.body.profilePic;
+
+    try {
+        await s3.storeProfilePicture(user_id, profile_pic);
+        res.status(200).json({success: `Profile picture stored` });
+    } catch (err) {
+        res.status(404).json({error: `Could not upload profile picture` });
+    }
+});
+
+// curl -i -X POST -d 'userId=f62ae581-a33f-480d-a015-d538b968db1a&bio=Hello World!\n My name is Alex...\n I like salami :>' http://localhost:3000/users/post_user_bio
+router.post('/post_user_bio', async(req, res) => {
+    const user_id = req.body.userId;
+    const user_bio = req.body.bio;
+
+    try {
+        await dao.updateUserProfileBio(user_id, user_bio);
+        res.status(200).json({success: `User bio updated` });
+    } catch (err) {
+        res.status(404).json({error: `Could not update user bio` });
     }
 });
 
@@ -405,7 +533,6 @@ router.delete('/end_friendship/', async (req, res) => {
     } else{
         res.status(401).json({ error: `User ${userId} does not exist !` });
     }
-
 })
 
 module.exports = router;

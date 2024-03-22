@@ -14,6 +14,7 @@ const getPendingFriendshipRequests = async (user_id) => {
       SELECT * 
       FROM User_Friendships 
       WHERE friend_id = ? AND status = 'pending'
+
       `;
       dbConnection.getConnection((err, connection) => {
         connection.query(query, [user_id], (err, data) => {
@@ -32,6 +33,70 @@ const getPendingFriendshipRequests = async (user_id) => {
       });
     });
 };
+
+/* 
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getUsersFriends = async (user_id) => {
+  return new Promise((resolve, reject) => {
+    /*
+      User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
+    */
+    const query = `
+      SELECT * 
+      FROM User_Friendships 
+      WHERE (user_id = ? OR friend_id = ?) AND start_date IS NOT NULL AND status = 'accepted';
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id, user_id], (err, data) => {
+        if (err) {
+          reject(`Error in getUsersFriends: cannot get user from UserFriendships table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getUsersFriends: no rows in the UserFriendships table matched user_id: ${user_id}.`);
+        } else {
+          resolve(data[0])
+        }
+        connection.release()
+      }); 
+    });
+  });
+}
+
+/* 
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getFriendRecommendations = async (user_id) => {
+  return new Promise((resolve, reject) => {
+    /*
+      User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
+    */
+    const query = `
+    SELECT user_id FROM (
+      (SELECT pod_id 
+      FROM User_Pods
+      WHERE user_id = ? AND date_left IS null) AS pods
+      JOIN
+      User_Pods up
+      ON pods.pod_id = up.pod_id
+      WHERE date_left IS null
+    )
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id], (err, data) => {
+        if (err) {
+          reject(`Error in getFriendRecommendations: cannot get user from User_Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getFriendRecommendations: no rows in the User_Pods table matched user_id: ${user_id}.`);
+        } else {
+          resolve(data[0])
+        }
+        connection.release()
+      }); 
+    });
+  });
+}
 
 /*
   parameters: user_id, friend_id, status
@@ -120,9 +185,41 @@ const endFriendship = async(user_id, friend_id) => {
     });
 }
 
+/* 
+  parameters: none
+  returns: entire users table on success, error message on error/when no users exist
+*/
+const getAllFriendships = async () => {
+  return new Promise((resolve, reject) => {
+    /*
+      Users (user_id, first_name, last_name, phone, email_address, 
+      user_password, date_of_birth, score, national_id, country, wallet_amount)
+    */
+    const query = `
+      SELECT * 
+      FROM User_Friendships 
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, data) => {
+        if (err) {
+          reject(`Error in getAllFriendships: cannot get users from User_Friendships table. ${err}`);
+        } else if (data.length === 0) {
+          reject(`Error in getAllFriendships: no rows in the User_Friendships table.`);
+        } else {
+          resolve(data)
+        }
+        connection.release()
+      });  
+    });
+  });
+};
+
 module.exports = {
   getPendingFriendshipRequests,
   postFriendRequest,
   acceptFriendRequest,
-  endFriendship
+  endFriendship,
+  getUsersFriends,
+  getFriendRecommendations,
+  getAllFriendships
 };

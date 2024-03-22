@@ -1,4 +1,5 @@
 const {dbConnection} = require("./dbConnection");
+const common = require('../common/commonFunctionalities');
 
 
 /*
@@ -19,6 +20,36 @@ const getAllPods = async () => {
           reject(`Error in getAllPods: cannot get pods from Pods table. ${err.message}`);
         } else if (data.length === 0) {
           reject(`Error in getAllPods: no rows in the Pods table.`);
+        } else {
+          console.log(data)
+          resolve(data)
+        }
+        connection.release()
+      });
+    });
+    // closeConnection(connection)
+  });
+};
+
+/*
+  parameters: none
+  returns: entire pods table on success, error message on error/when no pods exist
+*/
+const getAllPublicPods = async () => {
+  return new Promise((resolve, reject) => {
+    // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+    const query = `
+      SELECT * 
+      FROM Pods 
+      WHERE visibility = 'public'
+    `;
+
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, data) => {
+        if (err) {
+          reject(`Error in getAllPublicPods: cannot get pods from Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getAllPublicPods: no rows in the Pods table.`);
         } else {
           console.log(data)
           resolve(data)
@@ -52,7 +83,7 @@ const explorePublicPods = async () => {
     `;
 
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [PUBLIC_VISIBILITY_STRING], (err, data) => {
+      connection.query(query, [common.PUBLIC_VISIBILITY_STRING], (err, data) => {
         if (err) {
           reject(`Error in explorePublicPods: cannot get public pods. ${err.message}`);
         } else if (data.length === 0) {
@@ -96,6 +127,35 @@ const getPod = async (pod_id) => {
   });
 };
 
+/*
+  parameters: pod_id
+  returns: row in Pods table on success, error message on error
+*/
+const getPodByCode = async (pod_code) => {
+  return new Promise((resolve, reject) => {
+    // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+    const query = `
+      SELECT * 
+      FROM Pods 
+      WHERE pod_code = ?
+    `;
+
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [pod_code], (err, data) => {
+        if (err) {
+          reject(`Error in getPodByCode: cannot get pod from Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getPodByCode: no rows in the Pods table matched pod_code: ${pod_code}.`);
+        } else {
+          resolve(data[0])
+        }
+        connection.release()
+      });
+    });
+    // closeConnection(connection)
+  });
+};
+
 /* 
   parameters: pod_name
   returns: row in Pods table on success, error message on error
@@ -106,7 +166,7 @@ const getPodsByName = async (pod_name) => {
     const query = `
     WITH pods_lifetimes AS (SELECT Pods.pod_id, pod_name, recurrence_rate, contribution_amount, pod_size, pod_code FROM Pods
     JOIN Pod_Lifetimes PL ON Pods.pod_id = PL.pod_id
-    WHERE pod_name LIKE ? AND PL.end_date IS NULL)
+    WHERE pod_name LIKE ? AND visibility = ? AND PL.end_date IS NULL)
     SELECT pods_lifetimes.pod_id, pod_name, recurrence_rate, contribution_amount, COUNT(UP.user_id) AS current_num_members, pod_size, pod_code FROM pods_lifetimes
     JOIN User_Pods UP ON pods_lifetimes.pod_id = UP.pod_id
     WHERE UP.date_left IS NULL
@@ -114,7 +174,7 @@ const getPodsByName = async (pod_name) => {
     `;
     const pod_name_new = '%' + pod_name + '%';
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [pod_name_new], (err, data) => {
+      connection.query(query, [pod_name_new, common.PUBLIC_VISIBILITY_STRING], (err, data) => {
         if (err) {
           reject(`Error in getPodsByName: cannot get pod from Pods table. ${err.message}`);
         } else if (data.length === 0) {
@@ -155,11 +215,12 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date, pod_co
   });
 }
 
-
 module.exports = {
   getAllPods,
   getPod,
+  getPodByCode,
   addPod,
   getPodsByName,
-  explorePublicPods
+  explorePublicPods,
+  getAllPublicPods
 };

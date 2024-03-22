@@ -2,9 +2,6 @@
 
 to run: 
 
-1. run npm install
-2. node ./bin/www
-
-Dependencies to install:
-* npm install socket.io
-* npm install express
+1. run `npm install`
+2. run `pip3 install -r requirements.txt`
+3. run `node ./bin/www`

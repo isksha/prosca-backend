@@ -87,7 +87,6 @@ const getDepositsByPodId = async (pod_id) => {
         const query = `
         SELECT * 
         FROM Pod_Deposits 
-        WHERE pod_id = ?  
         `;
         dbConnection.getConnection((err, connection) => {
             connection.query(query, [pod_id], (err, data) => {
@@ -95,6 +94,31 @@ const getDepositsByPodId = async (pod_id) => {
                     reject(`Error in getDepositByPodId: cannot get deposits with specified id. ${err}`);
                 } else if (data.length === 0) {
                     reject(`Error in getDepositByPodId: no rows in the Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getMemberContrAmounts = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT d.user_id, SUM(d.amount), u.first_name, u.last_name
+        FROM Pod_Deposits d
+        JOIN Users u ON u.user_id = d.user_id
+        WHERE d.pod_id = ?
+        GROUP BY d.user_id, u.first_name, u.last_name;
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getMemberContrAmounts: cannot get member total contribution amounts for pod. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getMemberContrAmounts: no rows in Pod_deposits join Users table.`);
                 } else {
                     resolve(data)
                 }
@@ -185,23 +209,30 @@ const getTransactionByPodId = async (pod_id) => {
         // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
         const query = `
         SELECT
-            w.amount AS amount,
-            d.amount AS amount,
-            w.transaction_date AS transaction_date,
-            d.transaction_date AS transaction_date,
-            w.user_id AS user_id,
-            d.user_id AS user_id,
-            u.first_name AS first_name
-            u.last_name AS last_name
-            d.deposit_id AS deposit_id
-            w.withdrawal_id AS withdrawal_id
+            w.amount AS amnt,
+            w.transaction_date AS transac_date,
+            w.user_id AS u_id,
+            u.first_name AS f_name,
+            u.last_name AS l_name,
+            'withdrawal' AS transac_type
         FROM Pod_Withdrawals w
-        JOIN Pod_Deposits d ON w.pod_id = d.pod_id
-        JOIN Users u ON u.user_id = w.user_id OR u.user_id = d.user_id
-        ORDER BY transaction_date DESC;
+        JOIN Users u ON u.user_id = w.user_id
+        WHERE w.pod_id = ?
+        UNION
+        SELECT
+            d.amount AS amnt,
+            d.transaction_date AS transac_date,
+            d.user_id AS u_id,
+            u.first_name AS f_name,
+            u.last_name AS l_name,
+            'deposit' AS transac_type
+        FROM Pod_Deposits d
+        JOIN Users u ON u.user_id = d.user_id
+        WHERE d.pod_id = ?
+        ORDER BY transac_date DESC;
         `;
         dbConnection.getConnection((err, connection) => {
-            connection.query(query, [pod_id], (err, data) => {
+            connection.query(query, [pod_id, pod_id], (err, data) => {
                 if (err) {
                     reject(`Error in getTransactionByPodId: cannot get transactions with specified id. ${err}`);
                 } else if (data.length === 0) {
@@ -214,6 +245,69 @@ const getTransactionByPodId = async (pod_id) => {
         });
     });
 }
+
+const getTransactionByUserId = async (user_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        // Pod_Withdrawals(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT
+            w.amount AS amnt,
+            w.transaction_date AS transac_date,
+            w.user_id AS u_id,
+            p.pod_name AS pod_name,
+            'withdrawal' AS transac_type
+        FROM Pod_Withdrawals w
+        JOIN Pods p ON p.pod_id = w.pod_id
+        WHERE w.user_id = ?
+        UNION
+        SELECT
+            d.amount AS amnt,
+            d.transaction_date AS transac_date,
+            d.user_id AS u_id,
+            p.pod_name AS pod_name,
+            'deposit' AS transac_type
+        FROM Pod_Deposits d
+        JOIN Pods p ON p.pod_id = d.pod_id
+        WHERE d.user_id = ?
+        ORDER BY transac_date DESC;
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [user_id, user_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getTransactionByUserId: cannot get transactions with specified id. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getTransactionByUserId: no rows in the Pod_Withdrawals join Pod_Deposits table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getAllTransactions = async () => {
+    return new Promise((resolve, reject) => {
+        const query = `
+        SELECT * 
+        FROM Pod_Withdrawals 
+        JOIN Pod_Deposits 
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, (err, data) => {
+                if (err) {
+                    reject(`Error in getAllTransactions: cannot get withdrawals or deposits. ${err}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getAllTransactions: no rows in the Pod_Withdrawals join Pod_Depostis table.`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+};
 
 /********************************     Lifetimes *********************************** */
 
@@ -265,5 +359,9 @@ module.exports = {
     addWithdrawal,
     getUserLifetimesInfo,
     getWithdrawalsByPodId,
-    getDepositsByPodId
+    getDepositsByPodId,
+    getTransactionByPodId,
+    getMemberContrAmounts,
+    getTransactionByUserId,
+    getAllTransactions
 };
