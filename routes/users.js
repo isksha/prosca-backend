@@ -86,15 +86,15 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-http://localhost:3000/users/get_requests/thisismyuserid
+http://localhost:3000/users/get_requests/68d8f357-415e-4375-9beb-0de09710fecb
 router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
-    const firstName = req.params.userId
+    const userId = req.params.userId
     try {
         const foundRequests = await dao.getPendingFriendshipRequests(userId);
         if (foundRequests) {
-            const requestedUserIds = foundRequests.map(request => request.friendId);
+            const requestedUserIds = foundRequests.map(request => request.friend_id);
             const friendsInfo = await Promise.all(
-                requestedUserIds.map(async uid => await dao.getUserById(uid))).flat();
+                requestedUserIds.map(async uid => await dao.getUserById(uid)));
             res.status(200).json(friendsInfo);
         } else {
             res.status(404).json({error: 'No users found with given name' });
