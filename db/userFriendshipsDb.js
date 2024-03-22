@@ -33,6 +33,35 @@ const getPendingFriendshipRequests = async (user_id) => {
     });
 };
 
+/* 
+  parameters: user_id
+  returns: row in Users table on success, error message on error
+*/
+const getUsersFriends = async (user_id) => {
+  return new Promise((resolve, reject) => {
+    /*
+      User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
+    */
+    const query = `
+      SELECT * 
+      FROM UserFriendships 
+      WHERE user_id = ? OR friend_id = ? AND start_date NOT null and status = 'accepted'
+    `;
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [user_id, user_id], (err, data) => {
+        if (err) {
+          reject(`Error in getUsersFriends: cannot get user from UserFriendships table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getUsersFriends: no rows in the UserFriendships table matched user_id: ${user_id}.`);
+        } else {
+          resolve(data[0])
+        }
+        connection.release()
+      }); 
+    });
+  });
+}
+
 /*
   parameters: user_id, friend_id, status
   returns: 1 on success, error message on error
@@ -124,5 +153,6 @@ module.exports = {
   getPendingFriendshipRequests,
   postFriendRequest,
   acceptFriendRequest,
-  endFriendship
+  endFriendship,
+  getUsersFriends
 };

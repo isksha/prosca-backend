@@ -11,6 +11,7 @@ const getPodMembers = async (pod_id) => {
       SELECT Users.user_id, first_name, last_name, score FROM User_Pods
       JOIN Users ON Users.user_id = User_Pods.user_id
       WHERE pod_id = ? AND date_left IS NULL
+      ORDER BY User_Pods.date_joined ASC
       `;
       dbConnection.getConnection((err, connection) => {
         connection.query(query, [pod_id], (err, data) => {
@@ -87,7 +88,7 @@ const removeUserFromPod = async(user_id, pod_id) => {
 
 /*
   parameters: user_id
-  returns: pod_ids of pods user iscurrently in on success, error message on error
+  returns: pod_ids of pods user is currently in on success, error message on error
 */
 const getUserPods = async (user_id) => {
     return new Promise((resolve, reject) => {
@@ -98,6 +99,7 @@ const getUserPods = async (user_id) => {
           SELECT pod_id 
           FROM User_Pods 
           WHERE user_id = ? AND date_left IS NULL
+          ORDER BY date_joined DESC
         `;
         dbConnection.getConnection((err, connection) => {
             connection.query(query, [user_id], (err, data) => {

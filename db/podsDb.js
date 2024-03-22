@@ -31,6 +31,36 @@ const getAllPods = async () => {
   });
 };
 
+/*
+  parameters: none
+  returns: entire pods table on success, error message on error/when no pods exist
+*/
+const getAllPublicPods = async () => {
+  return new Promise((resolve, reject) => {
+    // Pods(pod_id, pod_name, visibility, creator_id, creation date, pod_code)
+    const query = `
+      SELECT * 
+      FROM Pods 
+      WHERE visibility = 'public'
+    `;
+
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, (err, data) => {
+        if (err) {
+          reject(`Error in getAllPublicPods: cannot get pods from Pods table. ${err.message}`);
+        } else if (data.length === 0) {
+          reject(`Error in getAllPublicPods: no rows in the Pods table.`);
+        } else {
+          console.log(data)
+          resolve(data)
+        }
+        connection.release()
+      });
+    });
+    // closeConnection(connection)
+  });
+};
+
 /* 
   parameters: none
   returns: all open public pod lifetime info on success, error message on error/when no pods exist
@@ -185,47 +215,6 @@ const addPod = async(pod_id, name, visibility, creator_id, creation_date, pod_co
   });
 }
 
-
-const deleto = async() => {
-  return new Promise((resolve, reject) => {
-    const query = `
-    DELETE FROM User_Stripe
-    `
-    dbConnection.getConnection((err, connection) => {
-      connection.query(query, (err, result) => {
-        if (err) {
-          reject(`Error: ${err.message}`);
-        } else if (result.affectedRows === 0) {
-          reject(`Error, no affected rows`);
-        } else {
-          resolve(result.affectedRows) // should return 1 on success
-        }
-        connection.release()
-      });
-    });
-  });
-}
-
-const viewo = async() => {
-  return new Promise((resolve, reject) => {
-    const query = `
-    SELECT * FROM User_Stripe
-    `
-    dbConnection.getConnection((err, connection) => {
-      connection.query(query, (err, result) => {
-        if (err) {
-          reject(`Error: ${err.message}`);
-        } else if (result.affectedRows === 0) {
-          reject(`Error, no affected rows`);
-        } else {
-          resolve(result.affectedRows) // should return 1 on success
-        }
-        connection.release()
-      });
-    });
-  });
-}
-
 module.exports = {
   getAllPods,
   getPod,
@@ -233,6 +222,5 @@ module.exports = {
   addPod,
   getPodsByName,
   explorePublicPods,
-  deleto, 
-  viewo
+  getAllPublicPods
 };

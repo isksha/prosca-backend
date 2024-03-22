@@ -27,7 +27,7 @@ const checkPodExists = async (req, res, next) => {
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
     try {
-        const foundPods = await dao.getAllPods();
+        const foundPods = await dao.getAllPublicPods();
         res.status(200).json(foundPods);
     } catch (err) {
         res.status(404).json({error: 'No pods found' });
@@ -68,8 +68,12 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.numUsers = numUsers.length;
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
+        activeLifetime.start_date.setHours(23);
+        activeLifetime.start_date.setMinutes(59);
+        activeLifetime.start_date.setSeconds(59);
+
         if (activeLifetime === undefined) {
-            console.log('active');
+            console.log('inactive');
             const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
             foundPod.contributionAmt = unstartedLifetime.contribution_amount;
             foundPod.isActive = unstartedLifetime.isActive;
@@ -77,7 +81,7 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             foundPod.lifetimeId = unstartedLifetime.lifetime_id;
             res.status(200).json(foundPod);
         } else {
-            console.log('inactive')
+            console.log('active')
             foundPod.contributionAmt = activeLifetime.contribution_amount;
             foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
             foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
@@ -289,6 +293,9 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
         const recurrenceRate = lifetime.recurrence_rate
         const contributionAmount = lifetime.contribution_amount
         const startDate = lifetime.start_date
+        startDate.setHours(23);
+        startDate.setMinutes(59);
+        startDate.setSeconds(59);
 
         const podMemberIds = (await dao.getPodMembers(associatedPodId)).map(member => member.user_id);
         const potOrderArray = common.generateRandomOrderArray(podMemberIds.length); // can be replaced with another algo
@@ -349,28 +356,6 @@ router.delete('/end_lifetime', async (req, res) => {
     } catch (err) {
         console.log(err)
         res.status(401).json( { error: 'Failed in closing lifetime' } );
-    }
-});
-
-// curl -i -X DELETE -d 'podId=0df63043-7204-41a5-ad94-a066db556fcd' http://localhost:3000/pods/hehehe
-router.delete('/hehehe', async (req, res) => {
-    // const podId = req.body.podId
-
-    try {
-        const activeLifetime = await dao.deleto();
-    } catch (err) {
-        console.log(err)
-        res.status(401).json( { error: 'Failed in deleting all rows' } );
-    }
-});
-
-router.get('/hohoho', async (req, res) => {
-
-    try {
-        const foundPod = await dao.viewo();
-    } catch (err) {
-        console.log(err)
-        res.status(404).json({ error: 'Failed in retrieving all rows' })
     }
 });
 

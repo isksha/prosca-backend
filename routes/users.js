@@ -65,8 +65,32 @@ router.get('/:userName', async (req, res) => {
     
 });
 
-// http://localhost:3000/users/suggest_friends/username
-router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
+// http://localhost:3000/users/search_friends/username
+router.get('/search_friends/:userName', checkUserExists,async (req, res) => {
+    const userName = req.params.userName? req.params.userName : "";
+    try {
+        const foundUsers = await dao.getUsersByName(userName);
+        if (foundUsers) {
+            const foundUsersLimitedInfo = foundUsers.map(user => {
+                return {
+                    user_id: user.user_id,
+                    first_name: user.first_name, 
+                    last_name: user.last_name,
+                    score: user.score,
+                };
+            });
+            res.status(200).json(foundUsersLimitedInfo);
+        } else {
+            res.status(404).json({error: 'No users found with given name' });
+        }
+            
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// http://localhost:3000/users/recommend_friends/username
+router.get('/recommend_friends/:userName', checkUserExists,async (req, res) => {
     const userName = req.params.userName? req.params.userName : "";
     try {
         const foundUsers = await dao.getUsersByName(userName);
@@ -91,15 +115,28 @@ router.get('/suggest_friends/:userName', checkUserExists,async (req, res) => {
 
 // http://localhost:3000/users/get_friends/thisismyuserid
 router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
-    const userId = req.params.userId;
-
+    const userId = req.params.userId? req.params.userId : "";
     try {
-        const foundUser = await dao.getUserById(userId);
-        res.status(200).json(foundUser);
+        const foundFriends = await dao.getUsersFriends(userId);
+        if (foundFriends) {
+            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsInfo = await Promise.all(
+                friendsUserIds.map(async uid => {
+                    if (uid !== userId) { // don't return self as friend
+                        return await dao.getUserById(uid);
+                    }
+                })).flat();
+            res.status(200).json(friendsInfo);
+        } else {
+            res.status(404).json({error: 'get_friends route: no users found with given name in userFriendships table' });
+        }
+            
     } catch (err) {
-        res.status(404).json({ error: `Could not get user with id ${userId}` })
+        res.status(404).json({error: `Error : ${err}` });
     }
 });
+
+
 
 // http://localhost:3000/users/get_requests/thisismyuserid
 router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
