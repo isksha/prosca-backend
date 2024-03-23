@@ -14,7 +14,6 @@ const getPendingFriendshipRequests = async (user_id) => {
       SELECT * 
       FROM User_Friendships 
       WHERE friend_id = ? AND status = 'pending'
-
       `;
       dbConnection.getConnection((err, connection) => {
         connection.query(query, [user_id], (err, data) => {
@@ -46,7 +45,7 @@ const getUsersFriends = async (user_id) => {
     const query = `
       SELECT * 
       FROM User_Friendships 
-      WHERE (user_id = ? OR friend_id = ?) AND start_date IS NOT NULL AND status = 'accepted';
+      WHERE user_id = ? AND start_date IS NOT NULL AND status = 'accepted';
     `;
     dbConnection.getConnection((err, connection) => {
       connection.query(query, [user_id, user_id], (err, data) => {
@@ -97,6 +96,7 @@ const getFriendRecommendations = async (user_id) => {
     });
   });
 }
+
 
 /*
   parameters: user_id, friend_id, status
