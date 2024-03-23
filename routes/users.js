@@ -130,13 +130,18 @@ router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
     }
 });
 
-// http://localhost:3000/users/get_friends/thisismyuserid
+// http://localhost:3000/users/get_friends/94b5e11c-9ae3-42f9-b1b2-056c7c52d599
 router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId? req.params.userId : "";
     try {
         const foundFriends = await dao.getUsersFriends(userId);
         if (foundFriends) {
-            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsUserIds = foundFriends.map(friend =>{
+                if(friend.user_id == userId){
+                    return friend.friend_id;
+                }else{
+                    return friend.user_id;
+                }});
             const friendsInfo = await Promise.all(
                 friendsUserIds.map(async uid => {
                     if (uid !== userId) { // don't return self as friend
@@ -458,7 +463,7 @@ router.put('/:userId',  async(req, res) => {
 
 // curl -i -X PATCH -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&user2Id=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/accept_friendship
 // curl -H 'Content-Type: application/json' -d '{"userId": "9bf6574c-6e97-4f05-b0b2-0c06b485b733", "user2Id": "7990f1ed-b1a4-4985-95bf-75ef645b51cf"}' -X PATCH http://localhost:3000/users/accept_friendship
-     
+ //userId1 is the user the request is from and userId2 is the user the request was sent to    
 router.patch('/accept_friendship',  async(req, res) => {
     const userId = req.body.userId;
     const user2Id = req.body.user2Id;
