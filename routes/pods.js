@@ -27,7 +27,7 @@ const checkPodExists = async (req, res, next) => {
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
     try {
-        const foundPods = await dao.getAllPods();
+        const foundPods = await dao.getAllPublicPods();
         res.status(200).json(foundPods);
     } catch (err) {
         res.status(404).json({error: 'No pods found' });
@@ -68,18 +68,41 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.numUsers = numUsers.length;
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
+        activeLifetime.start_date.setHours(23);
+        activeLifetime.start_date.setMinutes(59);
+        activeLifetime.start_date.setSeconds(59);
+
         if (activeLifetime === undefined) {
+            console.log('inactive');
             const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
-            foundPod.contributionAmt = unstartedLifetime.contribution_amount
+            foundPod.contributionAmt = unstartedLifetime.contribution_amount;
+            foundPod.isActive = unstartedLifetime.isActive;
+            foundPod.recurrenceRate = unstartedLifetime.recurrence_rate;
+            foundPod.lifetimeId = unstartedLifetime.lifetime_id;
             res.status(200).json(foundPod);
         } else {
-            foundPod.contributionAmt = activeLifetime.contribution_amount
-            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1)
-            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate)
+            console.log('active')
+            foundPod.contributionAmt = activeLifetime.contribution_amount;
+            foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
+            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
+            foundPod.isActive = activeLifetime.isActive;
+            foundPod.recurrenceRate = activeLifetime.recurrence_rate;
+            foundPod.lifetimeId = activeLifetime.lifetime_id;
             res.status(200).json(foundPod);
         }
     } catch (err) {
         res.status(401).json({ error: 'Could not get pod' })
+    }
+});
+
+router.get('/get_by_code/:podCode', async (req, res) => {
+    const podCode = req.params.podCode;
+
+    try {
+        const foundPod = await dao.getPodByCode(podCode);
+        res.redirect(301, `/pods/${foundPod.pod_id}`)
+    } catch (err) {
+        res.status(404).json({ error: 'Could not pod by given code' })
     }
 });
 
@@ -123,10 +146,36 @@ router.get('/get_members/:podID', async (req, res) => {
 // gets deposits and withdrawals for the pod for pod transaction history
 router.get('/transactions/:podId/', checkPodExists, async(req, res) => {
     const pod_id = req.params.podId;
-
-    const transactions = await dao.getTransactionByPodId(pod_id);
-    res.status(200).json({transactions});
+    try {
+        const transactions = await dao.getTransactionByPodId(pod_id);
+        res.status(200).json(transactions);      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
 });
+
+// gets deposits and withdrawals for the pod for pod transaction history
+router.get('/totalcontributions/:podId/', checkPodExists, async(req, res) => {
+    const pod_id = req.params.podId;
+    try {
+        const transactions = await dao.getMemberContrAmounts(pod_id);
+        res.status(200).json({transactions});      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
+// gets deposits and withdrawals for the pod for pod transaction history
+router.get('/deposits/:podId/', checkPodExists, async(req, res) => {
+    const pod_id = req.params.podId;
+    try {
+        const transactions = await dao.getDepositsByPodId(pod_id);
+        res.status(200).json({transactions});      
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
 
 // gets payout dates for users for current lifetime
 router.get('/payout_dates/:lifetime_id/', async(req, res) => {
@@ -137,11 +186,27 @@ router.get('/payout_dates/:lifetime_id/', async(req, res) => {
         if (found_lifetime) {
             const payouts = await dao.getPayoutDatesByLifetimeId(lifetime_id);
             res.status(200).json({payouts});
-        } else{
+        } else {
             res.status(404).json({error: 'Could not get associated lifetime' });
         }
     } catch (err) {
-        res.status(401).json({ error: 'Could not get payout dates' })
+        res.status(401).json({ error: `Could not get payout dates: ${err}` })
+    }
+});
+
+// gets payout dates for users for current lifetime
+router.get('/lifetime/:lifetime_id/', async(req, res) => {
+    const lifetime_id = req.params.lifetime_id;
+
+    try {
+        const found_lifetime = await dao.getLifetime(lifetime_id);
+        if (found_lifetime) {
+            res.status(200).json({found_lifetime});
+        } else{
+            res.status(404).json({error: 'Could not find lifetime' });
+        }
+    } catch (err) {
+        res.status(401).json({ error: 'Could not get lifetime' })
     }
 });
 
@@ -199,36 +264,6 @@ router.post('/create_lifetime', async (req, res) => {
     }
 });
 
-// curl -i -X POST -d 'podId=isk' http://localhost:3000/pods/initiate_vote
-router.post('/initiate_vote', async(req, res) => {
-    const podId = req.body.podId
-    const voteId = req.body.voteId
-
-    const foundPod = await dao.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json(foundPod);
-    } else {
-        res.status(401).json({ error: 'Failed to initiate vote' });
-    }
-});
-
-// curl -i -X POST -d 'podId=isk&voteId=12' http://localhost:3000/pods/accept_vote_decision
-router.post('/accept_vote_decision', async (req, res) => {
-    const podId = req.body.podId
-    const voteId = req.body.voteId
-
-    const foundPod = await dao.getPod(podId);
-    if (foundPod) {
-        // TODO: replace with DB calls
-
-        res.status(200).json({podId, voteId});
-    } else {
-        res.status(401).json({ error: 'Failed to initiate vote' });
-    }
-});
-
 // ********************************  PUT routes *********************************** //
 
 // curl -i -X PUT http://localhost:3000/pods/isk
@@ -250,14 +285,17 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
     const lifetimeId = req.params.lifetimeId;
 
     try {
-        const lifetime = await dao.startLifetime(lifetimeId);
+        const update_lifetime = await dao.startLifetime(lifetimeId);
         // const lifetime = await dao.getLifetime('060fb2ff-0c43-4ef1-8578-b49b67f08a82') // await dao.getLifetime('060fb2ff-0c43-4ef1-8578-b49b67f08a82')
-
+        const lifetime = await dao.getLifetime(lifetimeId);
         // Schedule payments in Stripe API
         const associatedPodId = lifetime.pod_id
         const recurrenceRate = lifetime.recurrence_rate
         const contributionAmount = lifetime.contribution_amount
         const startDate = lifetime.start_date
+        startDate.setHours(23);
+        startDate.setMinutes(59);
+        startDate.setSeconds(59);
 
         const podMemberIds = (await dao.getPodMembers(associatedPodId)).map(member => member.user_id);
         const potOrderArray = common.generateRandomOrderArray(podMemberIds.length); // can be replaced with another algo

@@ -50,7 +50,31 @@ const getStripeIdFromUserId = async (user_id) => {
     });
 }
 
+const getAllStripeUsers = async () => {
+    return new Promise((resolve, reject) => {
+        // User_Stripe(user_id, stripe_id)
+        const query = `
+        SELECT *
+        FROM User_Stripe
+        `
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, (err, data) => {
+                if (err) {
+                    reject(`Error in getAllStripeUsers: cannot get stripe_id/user_id from User_Stripe table. ${err.message}`);
+                } else if (data.length === 0) {
+                    reject(`Error in getAllStripeUsers: no rows were found when retrieving User_Stripe table`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+        
+    });
+}
+
 module.exports = {
     addUserStripeConnectedAccount,
-    getStripeIdFromUserId
+    getStripeIdFromUserId,
+    getAllStripeUsers
 };
