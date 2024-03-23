@@ -159,7 +159,7 @@ router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     try {
         const foundRequests = await dao.getPendingFriendshipRequests(userId);
         if (foundRequests) {
-            const requestedUserIds = foundRequests.map(request => request.friend_id);
+            const requestedUserIds = foundRequests.map(request => request.user_id);
             const friendsInfo = await Promise.all(
                 requestedUserIds.map(async uid => await dao.getUserById(uid)));
             res.status(200).json(friendsInfo);
