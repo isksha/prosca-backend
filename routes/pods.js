@@ -68,9 +68,6 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         foundPod.numUsers = numUsers.length;
 
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
-        activeLifetime.start_date.setHours(23);
-        activeLifetime.start_date.setMinutes(59);
-        activeLifetime.start_date.setSeconds(59);
 
         if (activeLifetime === undefined) {
             console.log('inactive');
@@ -82,6 +79,9 @@ router.get('/:podId', checkPodExists, async (req, res) => {
             res.status(200).json(foundPod);
         } else {
             console.log('active')
+            activeLifetime.start_date.setHours(23);
+            activeLifetime.start_date.setMinutes(59);
+            activeLifetime.start_date.setSeconds(59);
             foundPod.contributionAmt = activeLifetime.contribution_amount;
             foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
             foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
