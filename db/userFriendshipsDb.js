@@ -72,15 +72,14 @@ const getFriendRecommendations = async (user_id) => {
       User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
     */
     const query = `
-    SELECT user_id FROM (
+    SELECT up.user_id FROM 
       (SELECT pod_id 
       FROM User_Pods
       WHERE user_id = ? AND date_left IS null) AS pods
       JOIN
       User_Pods up
       ON pods.pod_id = up.pod_id
-      WHERE date_left IS null
-    )
+      WHERE up.date_left IS null;
     `;
     dbConnection.getConnection((err, connection) => {
       connection.query(query, [user_id], (err, data) => {

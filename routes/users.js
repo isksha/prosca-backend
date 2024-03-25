@@ -111,14 +111,13 @@ router.get('/search_friends/:userName', checkUserExists,async (req, res) => {
 router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId? req.params.userId : "";
     try {
-        const foundFriends = await dao.getFriendRecommendations(userId);
+        const foundUsers = await dao.getFriendRecommendations(userId);
+        const foundFriends = foundUsers.filter(user => user.user_id != userId);
         if (foundFriends) {
-            const friendsUserIds = foundFriends.map(friend => friend.friend_id);
+            console.log("foundfriends: ", foundFriends)
             const friendsInfo = await Promise.all(
-                friendsUserIds.map(async uid => {
-                    if (uid !== userId) { // don't return self as friend
-                        return await dao.getUserById(uid);
-                    }
+                foundFriends.map(async user => {
+                    return await dao.getUserById(user.user_id);
                 }));
             res.status(200).json(friendsInfo);
         } else {
