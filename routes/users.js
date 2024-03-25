@@ -163,6 +163,7 @@ router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId
     try {
         const foundRequests = await dao.getPendingFriendshipRequests(userId);
+        console.log(foundRequests);
         if (foundRequests) {
             const requestedUserIds = foundRequests.map(request => request.user_id);
             const friendsInfo = await Promise.all(
@@ -520,19 +521,19 @@ router.delete('/leave_pod/', async (req, res) => {
     }
 })
 
-// curl -i -X DELETE -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&friendId=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/end_friendship
+// curl -i -X DELETE -d 'userId=9bf6574c-6e97-4f05-b0b2-0c06b485b733&user2Id=7990f1ed-b1a4-4985-95bf-75ef645b51cf' http://localhost:3000/users/end_friendship
 router.delete('/end_friendship/', async (req, res) => {
     const userId = req.body.userId;
-    const friendId = req.body.friendId;
+    const user2Id = req.body.user2Id;
 
     const foundUser = await dao.getUserById(userId);
     if(foundUser){
         try { 
-            friendshipEnd = await dao.endFriendship(userId, friendId)
+            friendshipEnd = await dao.endFriendship(userId, user2Id)
             res.status(200).json({ success: 'Friendship/requested successfully terminated' });
         } catch (err) {
             console.log(err);
-            res.status(401).json({ error: `Failed to end friendship/request between users ${userId} and ${friendId}` });
+            res.status(401).json({ error: `Failed to end friendship/request between users ${userId} and ${user2Id}` });
         }
 
     } else{
