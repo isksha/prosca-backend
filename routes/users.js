@@ -371,12 +371,12 @@ router.post('/join_pod', async (req, res) => {
     const podId = req.body.podId
     const userId = req.body.userId
     const dateJoined = common.getDate()
-    const podCode = req.body.podCode
+    const podCode = req.body.podCode? req.body.podCode : null;
 
     // check if code matches for both private and public codes
     try {
         const foundPod = await dao.getPod(podId);
-        if (foundPod.pod_code !== podCode) {
+        if (foundPod.visibility == 'private' & foundPod.pod_code !== podCode) {
             return res.status(401).json({ error: 'Invalid pod invite code' });
         }
     } catch (err) {
