@@ -27,7 +27,7 @@ const checkPodExists = async (req, res, next) => {
 // ********************************     GET routes *********************************** //
 router.get('/', async (req, res) => {
     try {
-        const foundPods = await dao.getAllPublicPods();
+        const foundPods = await dao.getAllPods();
         res.status(200).json(foundPods);
     } catch (err) {
         res.status(404).json({error: 'No pods found' });

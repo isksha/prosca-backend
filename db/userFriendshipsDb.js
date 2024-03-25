@@ -54,7 +54,7 @@ const getUsersFriends = async (user_id) => {
         } else if (data.length === 0) {
           reject(`Error in getUsersFriends: no rows in the UserFriendships table matched user_id: ${user_id}.`);
         } else {
-          resolve(data[0])
+          resolve(data)
         }
         connection.release()
       }); 
@@ -89,7 +89,7 @@ const getFriendRecommendations = async (user_id) => {
         } else if (data.length === 0) {
           reject(`Error in getFriendRecommendations: no rows in the User_Pods table matched user_id: ${user_id}.`);
         } else {
-          resolve(data[0])
+          resolve(data)
         }
         connection.release()
       }); 

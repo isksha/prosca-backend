@@ -113,13 +113,13 @@ router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
     try {
         const foundFriends = await dao.getFriendRecommendations(userId);
         if (foundFriends) {
-            const friendsUserIds = foundFriends.map(friend => friend.friendId);
+            const friendsUserIds = foundFriends.map(friend => friend.friend_id);
             const friendsInfo = await Promise.all(
                 friendsUserIds.map(async uid => {
                     if (uid !== userId) { // don't return self as friend
                         return await dao.getUserById(uid);
                     }
-                })).flat();
+                }));
             res.status(200).json(friendsInfo);
         } else {
             res.status(404).json({error: 'recommend_friends route: no users found with given name in userFriendships table' });
@@ -135,6 +135,7 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId? req.params.userId : "";
     try {
         const foundFriends = await dao.getUsersFriends(userId);
+        console.log(foundFriends);
         if (foundFriends) {
             const friendsUserIds = foundFriends.map(friend =>{
                 if(friend.user_id == userId){
@@ -147,7 +148,7 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
                     if (uid !== userId) { // don't return self as friend
                         return await dao.getUserById(uid);
                     }
-                })).flat();
+                }));
             res.status(200).json(friendsInfo);
         } else {
             res.status(404).json({error: 'get_friends route: no users found with given name in userFriendships table' });
