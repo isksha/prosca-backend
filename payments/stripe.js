@@ -3,40 +3,48 @@ const dao = require('../db/dataAccessor');
 
 // creates connected stripe account for user upon account registration
 const createStripeConnectedAccount = async (user_id, email, fname, lname) => {
-    const account = await stripe.accounts.create({
-        type: 'express',
-        country: 'US', // TODO: allow foreign countries
-        email: email,
-        capabilities: {
-            card_payments: {
-                requested: true,
-            },
-            transfers: {
-                requested: true,
-            },
-        },
-        business_type : 'individual',
-        business_profile : {
-            product_description : 'PROSCA participation',
-            mcc : '7299',
-            url : 'https://linkedin.com/in/shangareev',
-            support_email : email,
-            name : `${fname} ${lname}`,
-        },
-        tos_acceptance : {
-            service_agreement: 'full',
-        },
-        settings : {
-            payouts : {
-                schedule : {
-                    interval : 'manual',
+    try {
+        const account = await stripe.accounts.create({
+            type: 'express',
+            country: 'US', // TODO: allow foreign countries
+            email: email,
+            capabilities: {
+                card_payments: {
+                    requested: true,
+                },
+                transfers: {
+                    requested: true,
                 },
             },
+            business_type : 'individual',
+            business_profile : {
+                product_description : 'PROSCA participation',
+                mcc : '7299',
+                url : 'https://linkedin.com/in/shangareev',
+                support_email : email,
+                name : `${fname} ${lname}`,
+            },
+            tos_acceptance : {
+                service_agreement: 'full',
+            },
+            settings : {
+                payouts : {
+                    schedule : {
+                        interval : 'manual',
+                    },
+                },
+            }
+        });
+        if (!account.id) {
+            throw Error(`Stripe ID is undefined: ${account.id}`)
         }
-    });
-
-    await dao.addUserStripeConnectedAccount(user_id, account.id);
-    return account.id;
+        return account.id;
+    } catch (err) {
+        console.log(`error in createStripeConnectedAccount ${err}`)
+        throw err;
+    }
+    
+    
 }
 
 // authenticates user with stripe

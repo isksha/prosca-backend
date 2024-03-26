@@ -259,32 +259,57 @@ router.post('/', async (req, res) => {
     const userPassport = common.generateSHA256Hash(req.body.nationalid) // encrypt server-side
     const userCountry = req.body.country
 
+    if (!userFname || !userLname || !userPhone || !userEmail || !req.body.password) {
+        return res.status(400).json({ error: 'Some fields are missing' });
+    }
+
+    if (!common.EMAIL_REGEX.test(userEmail)) {
+        return res.status(405).json({ error: `Invalid email address`})
+    }
+
+    if (!common.PHONE_NUMBER_REGEX.test(userPhone)) {
+        return res.status(406).json({ error: `Invalid phone number`})
+    }
+
     try {
         const userExists = await dao.getUserByEmail(userEmail);
-        console.log(userExists)
+        console.log("userExists? ", userExists)
         if (userExists !== undefined) {
             return res.status(401).json({ error: 'User already exists' });
         }
     } catch (err) {
-        return res.status(401).json({ error: 'Failed to add user' });
+        return res.status(404).json({ error: 'Failed to add user' });
+    }
+
+    // check password restrictions
+    if (!common.PASSWORD_REGEX.test(req.body.password)) {
+        return res.status(403).json({ error: `Password doesn't meet requirements`})
     }
 
     const userId = common.generateUniqueId();
 
+    let stripeId;
+    let acct_link;
+
     try {
-        await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
-        await dao.addUserProfile(userId)
+        stripeId = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
+        acct_link = await stripe.navigateToStripeAuth(stripeId)
     } catch (err) {
-        return res.status(401).json({ error: 'Failed to add user' })
+        // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
+        return res.status(402).json({ error: `Failed to add user: Stripe API error ${err}` })
     }
 
     try {
-        const account = await stripe.createStripeConnectedAccount(userId, userEmail, userFname, userLname);
-        const acct_link = await stripe.navigateToStripeAuth(account)
-        return res.status(200).json({ stripe_acct : acct_link })
+        await dao.addUser(userId, userEmail, userPhone, userFname, userLname, userPassword, userDob, userPassport, userCountry)
+        await dao.addUserProfile(userId)
+        if (stripeId) {
+            await dao.addUserStripeConnectedAccount(userId, stripeId);
+        } else {
+            throw Error("Stripe ID is undefined");
+        }
+        return res.status(200).json({ success: "Succesfully added user", stripe_acct : acct_link })
     } catch (err) {
-        // TODO: handle deleting user from Users table if they were not succesfully associated with a Stripe account
-        res.status(401).json({ error: 'Failed to add user: Stripe API error' })
+        return res.status(404).json({ error: 'Failed to add user' })
     }
 });
 
@@ -295,10 +320,10 @@ router.post('/authenticate', async (req, res) => {
 
     const foundUser = await dao.getUserByEmail(userEmail);
     if (foundUser === undefined) {
-        res.status(404).json({ error: 'Failed to authenticate user' });
+        res.status(404).json({ error: 'Authentication failed: no user found' });
     } else {
         if (foundUser.user_password !== common.generateSHA256Hash(userPassword)) {
-            res.status(401).json({ error: 'Incorrect password' });
+            res.status(401).json({ error: 'Authentication failed: incorrect password' });
         } else {
             res.status(200).json(foundUser);
         }

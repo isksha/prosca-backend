@@ -52,7 +52,7 @@ const getUserByEmail = async (email) => {
           console.log("error")
           reject(`Error in getUserByEmail: cannot get user from Users table. ${err.message}`);
         } else if (data.length === 0) {
-          console.log("doesn't exist")
+          console.log("user doesn't exist")
           resolve(undefined)
         } else {
           console.log("success")

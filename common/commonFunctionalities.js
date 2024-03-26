@@ -13,6 +13,11 @@ const WITHDRAWAL_TYPE_STRING = 'withdrawal'
 const S3_BUCKET_NAME = 'prosca-profile-pics'
 const AWS_REGION = 'us-east-1'
 
+// sign up restrictions
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_NUMBER_REGEX = /^\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}$/
+
 // ------------------------------------ CODE GENERATION ------------------------------------ //
 
 function generateUniqueId() {
@@ -110,6 +115,9 @@ module.exports = {
     WITHDRAWAL_TYPE_STRING,
     S3_BUCKET_NAME,
     AWS_REGION,
+    PASSWORD_REGEX,
+    EMAIL_REGEX,
+    PHONE_NUMBER_REGEX,
     generateUniqueId,
     getDate,
     generateSHA256Hash,
