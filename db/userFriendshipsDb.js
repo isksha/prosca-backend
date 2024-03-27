@@ -51,8 +51,6 @@ const getUsersFriends = async (user_id) => {
       connection.query(query, [user_id, user_id], (err, data) => {
         if (err) {
           reject(`Error in getUsersFriends: cannot get user from UserFriendships table. ${err.message}`);
-        } else if (data.length === 0) {
-          reject(`Error in getUsersFriends: no rows in the UserFriendships table matched user_id: ${user_id}.`);
         } else {
           resolve(data)
         }
