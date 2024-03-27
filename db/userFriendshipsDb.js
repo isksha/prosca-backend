@@ -87,7 +87,6 @@ const getFriendRecommendations = async (user_id) => {
     dbConnection.getConnection((err, connection) => {
       connection.query(query, [user_id, user_id, user_id], (err, data) => {
         if (err) {
-          console.log(err)
           reject(`Error in getFriendRecommendations: cannot get user from User_Pods table. ${err.message}`);
         } else if (data.length === 0) {
           reject(`Error in getFriendRecommendations: no rows in the User_Pods table matched user_id: ${user_id}.`);
