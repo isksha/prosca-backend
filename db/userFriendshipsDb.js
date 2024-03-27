@@ -80,11 +80,14 @@ const getFriendRecommendations = async (user_id) => {
       JOIN
       User_Pods up
       ON pods.pod_id = up.pod_id
-      WHERE up.date_left IS null;
+      WHERE up.date_left IS null
+      AND up.user_id NOT IN (SELECT friend_id FROM User_Friendships WHERE user_id = ? AND status = 'accepted')
+      AND up.user_id NOT IN (SELECT user_id FROM User_Friendships WHERE friend_id = ? AND status = 'accepted')
     `;
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [user_id], (err, data) => {
+      connection.query(query, [user_id, user_id, user_id], (err, data) => {
         if (err) {
+          console.log(err)
           reject(`Error in getFriendRecommendations: cannot get user from User_Pods table. ${err.message}`);
         } else if (data.length === 0) {
           reject(`Error in getFriendRecommendations: no rows in the User_Pods table matched user_id: ${user_id}.`);
