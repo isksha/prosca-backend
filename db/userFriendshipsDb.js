@@ -54,13 +54,16 @@ const getUsersFriends = async (user_id) => {
         } else if (data.length === 0) {
           reject(`Error in getUsersFriends: no rows in the UserFriendships table matched user_id: ${user_id}.`);
         } else {
-          resolve(data[0])
+          resolve(data)
         }
         connection.release()
       }); 
     });
   });
 }
+
+
+
 
 /* 
   parameters: user_id
@@ -144,7 +147,7 @@ const acceptFriendRequest = async(user_id, friend_id, status) => {
               reject(`Error in acceptFriendRequest: ${err.message}`);
           } else if (result.affectedRows === 0) {
               reject(`
-              Error in acceptFriendRequest: no rows were modified when accepting request from 
+              Error in  FriendRequest: no rows were modified when accepting request from 
               user_id:${user_id}, to user_id:${friend_id} from User_Friendship table.
               `);
           } else {

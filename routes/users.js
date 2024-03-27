@@ -158,6 +158,54 @@ router.get('/get_friends/:userId', checkUserExists,async (req, res) => {
     }
 });
 
+// *********** http://localhost:3000/users/get_mutual_friends/query?friendId=14f00b4c-cf5f-462a-99d6-99e870953f2d&userId=ee4c9a11-773c-47be-be57-b4cee9a6f250
+router.get('/get_mutual_friends/query',async (req, res) => {
+    const friendId = req.query.friendId;
+    console.log(friendId);
+    const userId = req.query.userId;
+    if(!userId || !friendId){
+        res.status(400).json({error:'Invalid request'});
+    }
+    try {
+        const myFriends = await dao.getUsersFriends(userId);
+        console.log(myFriends);
+        const theirFriends = await dao.getUsersFriends(friendId);
+        if (myFriends && theirFriends) {
+            const myfriendsIds = myFriends.map(friend =>{
+                if(friend.user_id == userId){
+                    return friend.friend_id;
+                }else{
+                    return friend.user_id;
+                }});
+
+            const theirfriendsIds = theirFriends.map(friend =>{
+                    if(friend.user_id == friendId){
+                        return friend.friend_id;
+                    }else{
+                        return friend.user_id;
+                    }});
+            let mutuals = [];
+            myfriendsIds.forEach(id => {
+                if(theirfriendsIds.includes(id)){
+                    mutuals.push(id);
+                }
+            });
+            console.log("mutusals")
+            console.log(mutuals[0]);
+            const mutualfriendsInfo = await Promise.all(
+                mutuals.map(async uid => {
+                    return await dao.getUserById(uid);   
+                }));
+            res.status(200).json(mutualfriendsInfo);
+        } else {
+            res.status(404).json({error: 'error in get_mutual_friends route.' });
+        }
+            
+    } catch (err) {
+        res.status(404).json({error: `Error : ${err}` });
+    }
+});
+
 http://localhost:3000/users/get_requests/68d8f357-415e-4375-9beb-0de09710fecb
 router.get('/get_requests/:userId', checkUserExists,async (req, res) => {
     const userId = req.params.userId
