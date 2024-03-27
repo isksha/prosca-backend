@@ -80,12 +80,12 @@ router.get('/open_chat/', async (req, res) => {
 });
 // ********************************    POST routes *********************************** //
 
-// curl -i -X POST -d 'senderId=8f0b3553-8920-4013-b8ae-1e453b7c8fb1&recipientUser=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&messageContent=Hey Cynthia,this is sara&recipientPod=' http://localhost:3000/chats/send_message
+// curl -i -X POST -d 'from_user_id=8f0b3553-8920-4013-b8ae-1e453b7c8fb1&recipient_user_id=aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94&message_content=Hey Cynthia,this is sara&recipient_pod_id=' http://localhost:3000/chats/send_message
 router.post('/send_message', async (req, res) => {
-    const senderId = req.body.senderId;
-    const recipientUser = req.body.recipientUser;
-    const recipientPod = req.body.recipientPod;
-    const messageContent = req.body.messageContent;
+    const senderId = req.body.from_user_id;
+    const recipientUser = req.body.recipient_user_id;
+    const recipientPod = req.body.recipient_pod_id;
+    const messageContent = req.body.message_content;
     let foundConversationIDString = "";
     
     try {
