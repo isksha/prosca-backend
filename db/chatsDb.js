@@ -197,13 +197,13 @@ const  findOneonOneConversations = async (user_id) => {
       JOIN Messages M on C.conversation_id = M.conversation_id
       WHERE (M.from_user_id =? OR recipient_user_id= ?) AND recipient_pod_id IS NULL
       GROUP BY C.conversation_id,from_user_id, recipient_pod_id, joined_datetime),
-      extract_receivers AS(SELECT IF(from_user_id = 'aa744c5b-1e7b-4fb2-8d90-0e3a8c0c4b94', recipient_user_id, from_user_id) AS receiver_id,conversation_id,joined_datetime FROM individual_convos)
-      SELECT  joined_datetime, NULL AS recipient_pod_id, receiver_id AS recipient_user_id, first_name, last_name FROM extract_receivers ER
+      extract_receivers AS(SELECT IF(from_user_id = ?, recipient_user_id, from_user_id) AS receiver_id,conversation_id,joined_datetime FROM individual_convos)
+      SELECT  joined_datetime, NULL AS recipient_pod_id, receiver_id AS recipient_user_id, first_name, last_name, score FROM extract_receivers ER
       JOIN Users U ON U.user_id = ER.receiver_id
       ORDER BY joined_datetime DESC;
     `;
     dbConnection.getConnection((err, connection) => {
-      connection.query(query, [user_id, user_id], (err, data) => {
+      connection.query(query, [user_id, user_id, user_id], (err, data) => {
         if (err) {
           console.log("error")
           reject(`Error in onOneConversations:${err.message}`);
