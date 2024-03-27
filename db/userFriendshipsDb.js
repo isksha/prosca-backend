@@ -62,6 +62,9 @@ const getUsersFriends = async (user_id) => {
   });
 }
 
+
+
+
 /* 
   parameters: user_id
   returns: row in Users table on success, error message on error
@@ -143,7 +146,7 @@ const acceptFriendRequest = async(user_id, friend_id, status) => {
               reject(`Error in acceptFriendRequest: ${err.message}`);
           } else if (result.affectedRows === 0) {
               reject(`
-              Error in acceptFriendRequest: no rows were modified when accepting request from 
+              Error in  FriendRequest: no rows were modified when accepting request from 
               user_id:${user_id}, to user_id:${friend_id} from User_Friendship table.
               `);
           } else {
