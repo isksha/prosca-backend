@@ -307,7 +307,7 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
         for (let i = 0; i < podMemberIds.length; i++) {
             await paymentScheduling.scheduleStripePayout(
                 podMemberIds[i],
-                numPodMembers * contributionAmount, // winner gets whole pot
+                (numPodMembers - 1) * contributionAmount, // winner gets whole pot
                 startDate,
                 recurrenceRate,
                 potOrderArray[i],
