@@ -260,7 +260,7 @@ const getTransactionByUserId = async (user_id) => {
         FROM Pod_Withdrawals w
         JOIN Pods p ON p.pod_id = w.pod_id
         WHERE w.user_id = ?
-        UNION
+        UNION ALL
         SELECT
             d.amount AS amnt,
             d.transaction_date AS transac_date,
@@ -308,6 +308,29 @@ const getAllTransactions = async () => {
         });
     });
 };
+
+const getDepositsByPodIdInternal = async (pod_id) => {
+    return new Promise((resolve, reject) => {
+        // Pod_Deposits(transaction_id, amount, transaction_date, user_id, pod_id)
+        const query = `
+        SELECT * 
+        FROM Pod_Deposits
+        WHERE pod_id = ?
+        `;
+        dbConnection.getConnection((err, connection) => {
+            connection.query(query, [pod_id], (err, data) => {
+                if (err) {
+                    reject(`Error in getDepositByPodId: cannot get deposits with specified id. ${err}`);
+                } else {
+                    resolve(data)
+                }
+                connection.release()
+            });
+        });
+    });
+}
+
+const getCurrCycle = async (pod_id) => (await getDepositsByPodIdInternal(pod_id)).length
 
 /********************************     Lifetimes *********************************** */
 
@@ -363,5 +386,6 @@ module.exports = {
     getTransactionByPodId,
     getMemberContrAmounts,
     getTransactionByUserId,
-    getAllTransactions
+    getAllTransactions,
+    getCurrCycle
 };

@@ -44,18 +44,16 @@ function getDateWithOffset(last_start, recurrenceRate, numPeriods) {
 
     if (recurrenceRate === "monthly") {
         currentDate.setMonth(currentDate.getMonth() + numPeriods);
-    } else {
+    } else if (recurrenceRate === "10 seconds") {
+        currentDate = shiftDateByXSeconds(new Date(), 10)
+    } else if (recurrenceRate === "hourly") {
+        currentDate = shiftDateByXSeconds(new Date(), 3600)
+    }
+    else {
         currentDate.setDate(currentDate.getDate() + numPeriods * RECURRENCE_STRING_TO_DIGIT_MAP.get(recurrenceRate));
     }
 
     return currentDate;
-}
-
-function getCurrCycle(last_start, recurrenceRate) {
-    let currentDate = getDate();
-    let diffInTime = currentDate.getTime() - last_start.getTime();
-    let diffInDays = diffInTime / (1000 * 3600 * 24);
-    return Math.floor(diffInDays / RECURRENCE_STRING_TO_DIGIT_MAP.get(recurrenceRate)) + 1;
 }
 
 // generate deposit dates for all cycles in the lifetime of the pod
@@ -122,8 +120,6 @@ module.exports = {
     getDate,
     generateSHA256Hash,
     getDateWithOffset,
-    getCurrCycle,
     getDepositDates,
     generateRandomOrderArray,
-    shiftDateByXSeconds
 }

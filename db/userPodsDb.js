@@ -17,8 +17,6 @@ const getPodMembers = async (pod_id) => {
         connection.query(query, [pod_id], (err, data) => {
             if (err) {
             reject(`Error in getPodMembers: cannot get members from User_Pods table. ${err.message}`);
-            } else if (data.length === 0) {
-            reject(`Error in getPodMembers: no rows in the User_Pods table matched pod_id: ${pod_id}.`);
             } else {
             resolve(data)
             }

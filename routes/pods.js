@@ -70,21 +70,35 @@ router.get('/:podId', checkPodExists, async (req, res) => {
         const activeLifetime = await dao.fetchActiveLifetime(req.params.podId);
 
         if (activeLifetime === undefined) {
-            console.log('inactive');
-            const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
-            foundPod.contributionAmt = unstartedLifetime.contribution_amount;
-            foundPod.isActive = unstartedLifetime.isActive;
-            foundPod.recurrenceRate = unstartedLifetime.recurrence_rate;
-            foundPod.lifetimeId = unstartedLifetime.lifetime_id;
-            res.status(200).json(foundPod);
+            const lastLifetime = await dao.fetchLastLifetime(req.params.podId);
+            if (lastLifetime !== undefined) {
+                console.log('ended')
+                foundPod.currCycle = await dao.getCurrCycle(req.params.podId);
+                foundPod.contributionAmt = lastLifetime.contribution_amount;
+                foundPod.isActive = lastLifetime.isActive;
+                foundPod.recurrenceRate = lastLifetime.recurrence_rate;
+                foundPod.lifetimeId = lastLifetime.lifetime_id;
+                res.status(200).json(foundPod);
+            } else {
+                console.log('inactive');
+                const unstartedLifetime = await dao.fetchUnstartedLifetime(req.params.podId);
+                foundPod.contributionAmt = unstartedLifetime.contribution_amount;
+                foundPod.isActive = unstartedLifetime.isActive;
+                foundPod.recurrenceRate = unstartedLifetime.recurrence_rate;
+                foundPod.lifetimeId = unstartedLifetime.lifetime_id;
+                res.status(200).json(foundPod);
+            }
+
         } else {
             console.log('active')
-            activeLifetime.start_date.setHours(23);
-            activeLifetime.start_date.setMinutes(59);
-            activeLifetime.start_date.setSeconds(59);
+            if (activeLifetime.recurrence_rate !== '10 seconds' && activeLifetime.recurrence_rate !== 'hourly') {
+                activeLifetime.start_date.setHours(23);
+                activeLifetime.start_date.setMinutes(59);
+                activeLifetime.start_date.setSeconds(59);
+            }
             foundPod.contributionAmt = activeLifetime.contribution_amount;
             foundPod.nextPayment = common.getDateWithOffset(activeLifetime.start_date, activeLifetime.recurrence_rate, 1);
-            foundPod.currCycle = common.getCurrCycle(activeLifetime.start_date, activeLifetime.recurrence_rate);
+            foundPod.currCycle = await dao.getCurrCycle(req.params.podId);
             foundPod.isActive = activeLifetime.isActive;
             foundPod.recurrenceRate = activeLifetime.recurrence_rate;
             foundPod.lifetimeId = activeLifetime.lifetime_id;
@@ -293,9 +307,12 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
         const recurrenceRate = lifetime.recurrence_rate
         const contributionAmount = lifetime.contribution_amount
         const startDate = lifetime.start_date
-        startDate.setHours(23);
-        startDate.setMinutes(59);
-        startDate.setSeconds(59);
+
+        if (startDate !== '10 seconds' && startDate !== 'hourly') {
+            startDate.setHours(23);
+            startDate.setMinutes(59);
+            startDate.setSeconds(59);
+        }
 
         const podMemberIds = (await dao.getPodMembers(associatedPodId)).map(member => member.user_id);
         const potOrderArray = common.generateRandomOrderArray(podMemberIds.length); // can be replaced with another algo
@@ -311,7 +328,9 @@ router.put('/start_lifetime/:lifetimeId',  async(req, res) => {
                 startDate,
                 recurrenceRate,
                 potOrderArray[i],
-                associatedPodId
+                associatedPodId,
+                numPodMembers,
+                i + 1,
             );
 
             // also store the date of the payout for each user in internal db

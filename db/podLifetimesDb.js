@@ -97,7 +97,36 @@ const fetchUnstartedLifetime = async(pod_id) => {
     dbConnection.getConnection((err, connection) => {
       connection.query(query, [pod_id], (err, data) => {
         if (err) {
-          reject(`Error in fetchActiveLifetime: cannot fetch active lifetim of pod_id: ${pod_id} from Pod_Lifetimes Table. ${err.message}`);
+          reject(`Error in fetchUnstartedLifetime: cannot fetch unstarted lifetime of pod_id: ${pod_id} from Pod_Lifetimes Table. ${err.message}`);
+        } else if (data.length === 0) {
+          resolve(undefined)
+        } else {
+          resolve(data[0]) // should return 1 on success
+        }
+        connection.release()
+      });
+    });
+  });
+}
+
+/*
+    parameters: pod_id
+    returns: row in Pod_Lifetimes table on success, error message on error
+*/
+const fetchLastLifetime = async(pod_id) => {
+  return new Promise((resolve, reject) => {
+    // Pod_Lifetimes(lifetime_id, start_date, pod_id, end_date, recurrence_rate, contribution_amount)
+    const query = `
+      SELECT *, 0 AS isActive
+      FROM Pod_Lifetimes
+      WHERE pod_id = ? AND start_date IS NOT NULL AND end_date IS NOT NULL
+      ORDER BY end_date DESC
+      LIMIT 1
+      `
+    dbConnection.getConnection((err, connection) => {
+      connection.query(query, [pod_id], (err, data) => {
+        if (err) {
+          reject(`Error in fetchLastLifetime: cannot fetch last lifetime of pod_id: ${pod_id} from Pod_Lifetimes Table. ${err.message}`);
         } else if (data.length === 0) {
           resolve(undefined)
         } else {
@@ -173,7 +202,7 @@ const endLifetime = async(lifetime_id) => {
       WHERE lifetime_id = ? AND start_date IS NOT NULL
       `
       dbConnection.getConnection((err, connection) => {
-        connection.query(query, [lifetime_id, start_date], (err, result) => {
+        connection.query(query, [lifetime_id], (err, result) => {
           if (err) {
             reject(`Error in endLifetime: cannot end Lifetime. ${err.message}`);
           } else if (result.affectedRows === 0) {
@@ -224,6 +253,7 @@ module.exports = {
     createLifetime,
     startLifetime,
     fetchActiveLifetime,
+    fetchLastLifetime,
     fetchUnstartedLifetime,
     endLifetime,
     getLifetimeStatement,

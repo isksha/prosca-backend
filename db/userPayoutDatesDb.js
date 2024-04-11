@@ -53,7 +53,7 @@ const getPayoutDatesByLifetimeId = async (lifetime_id) => {
 const getUpcomingPaymentsForUser = async (user_id) => {
     return new Promise((resolve, reject) => {
         const query = `
-      SELECT pl.contribution_amount, pd.payout_date, p.pod_name, p.pod_size, pl.start_date, pl.recurrence_rate
+      SELECT pl.contribution_amount, pd.payout_date, p.pod_name, p.pod_size, pl.start_date, pl.recurrence_rate, p.pod_id
       FROM User_Pods u
       JOIN Pods p ON u.pod_id = p.pod_id
       JOIN Pod_Lifetimes pl ON p.pod_id = pl.pod_id

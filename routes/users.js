@@ -114,7 +114,6 @@ router.get('/recommend_friends/:userId', checkUserExists,async (req, res) => {
         const foundUsers = await dao.getFriendRecommendations(userId);
         const foundFriends = foundUsers.filter(user => user.user_id != userId);
         if (foundFriends) {
-            console.log("foundfriends: ", foundFriends)
             const friendsInfo = await Promise.all(
                 foundFriends.map(async user => {
                     return await dao.getUserById(user.user_id);
@@ -267,8 +266,8 @@ router.get('/upcomingpayments/:userId/', checkUserExists, async(req, res) => {
     const user_id = req.params.userId;
     try {
         const payments = await dao.getUpcomingPaymentsForUser(user_id);
-        get_curr_cycle = x => common.getCurrCycle(x['start_date'], x['recurrence_rate']);
-        new_payments = payments.map(old_dict => ({ ...old_dict, curr_cycle: get_curr_cycle(old_dict)}));
+        get_curr_cycle = async x => await dao.getCurrCycle(x['pod_id']);
+        new_payments = await Promise.all(payments.map(async old_dict => ({...old_dict, curr_cycle: await get_curr_cycle(old_dict)})));
         res.status(200).json(new_payments);      
     } catch (err) {
         res.status(404).json({error: `Error : ${err}` });
