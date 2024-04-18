@@ -73,7 +73,7 @@ const getFriendRecommendations = async (user_id) => {
       User_Friendships (user_id, friend_id, start_datetime, status, end_datetime)
     */
     const query = `
-    SELECT up.user_id FROM 
+    SELECT DISTINCT up.user_id FROM 
       (SELECT pod_id 
       FROM User_Pods
       WHERE user_id = ? AND date_left IS null) AS pods
